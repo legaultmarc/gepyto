@@ -55,18 +55,19 @@ def ensembl_snp_in_region(region, build=BUILD):
             chrom = str(variant["seq_region_name"])
             pos = variant["start"]
             rs = str(variant["id"])
-            ref = str(variant["alt_alleles"][0])
-            alt = str(variant["alt_alleles"][1])
-            if len(variant["alt_alleles"]) > 2:
-                logging.warning("{} is not biallelic (only one allele "
-                    "considered).".format(rs))
-
             if type(rs) is str and not rs.startswith("rs"):
                 # We ignore the id if it's not from dbSNP.
                 rs = None
 
-            variant_obj = SNP(chrom, pos, rs, ref, alt)
-            variants.append(variant_obj)
+            if variant["alt_alleles"] < 2:
+                # Weirdly, we have less than two alleles.
+                logging.warning("{} has only one allele (ignored).".format(rs))
+                continue
+
+            ref = str(variant["alt_alleles"][0])
+            for alt in variant["alt_alleles"][1:]:
+                variant_obj = SNP(chrom, pos, rs, ref, alt)
+                variants.append(variant_obj)
 
     return variants
 
