@@ -1,7 +1,7 @@
 
 __all__ = ["Variant", ]
 
-class Variant(object):
+class SNP(object):
     def __init__(self, *args, **kwargs):
         """Initialize a SNP. 
 
@@ -75,6 +75,9 @@ class Variant(object):
     @classmethod
     def from_ensembl_api(cls, rs, build="GRCh37"):
         """Gets the information from the Ensembl REST API.
+
+        :param rs: The rs number for the variant of interest.
+        :param build: The genome build (e.g. GRCh37 or GRCh38).
 
         """
         if build == "GRCh37":
