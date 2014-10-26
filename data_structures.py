@@ -42,10 +42,28 @@ class SNP(object):
                 raise Exception("Missing parameter {}.".format(p))
 
         self.pos = int(self.pos)
-        assert re.match(r"([0-9]{1,2}|MT|X|Y)", str(self.chrom))
-        assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
-        assert type(self.ref) is str and len(self.ref) == 1
-        assert type(self.alt) is str and len(self.alt) == 1
+        try:
+            assert re.match(r"([0-9]{1,2}|MT|X|Y)", str(self.chrom))
+            assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
+            assert type(self.ref) is str and len(self.ref) == 1
+            assert type(self.alt) is str and len(self.alt) == 1
+        except AssertionError as e:
+            logging.critical(
+                "Assertion failed constructing the SNP object. \n"
+                "Parameters were: \n" 
+                "\tchrom: {chrom} ({chrom_type})"
+                "\tpos: {pos} ({pos_type})"
+                "\trs: {rs} ({rs_type})"
+                "\tref: {ref} ({ref_type})"
+                "\talt: {alt} ({alt_type})".format(
+                    chrom=self.chrom, chrom_type=type(self.chrom),
+                    pos=self.pos, pos_type=type(self.pos),
+                    rs=self.rs, pos_type=type(self.rs),
+                    ref=self.ref, pos_type=type(self.ref),
+                    alt=self.alt, pos_type=type(self.alt),
+                )
+            )
+            print e
 
     def get_position(self):
         """Returns a variant in the standard chrXX:pos notation. """
