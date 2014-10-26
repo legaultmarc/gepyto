@@ -61,6 +61,10 @@ def ensembl_snp_in_region(region, build=BUILD):
                 logging.warning("{} is not biallelic (only one allele "
                     "considered).".format(rs))
 
+            if type(rs) is str and not rs.startswith("rs"):
+                # We ignore the id if it's not from dbSNP.
+                rs = None
+
             variant_obj = SNP(chrom, pos, rs, ref, alt)
             variants.append(variant_obj)
 
