@@ -125,14 +125,24 @@ class SNP(object):
         :param s: The string to parse the SNP from (Format: chrXX:YYY_R/A).
         :param rs: An optional parameter specifying the rs number.
 
-        :returns: A SNP object.
+        :returns: A SNP object or a list of SNP objects for multi-allelic loci.
 
         """
         s = s.lstrip("chr")
         chrom, s = s.split(":")
         pos, s = s.split("_")
-        ref, alt = s.split("/")
-        return SNP(chrom, pos, rs, ref, alt)
+        alleles = s.split("/")
+        ref = alleles[0]
+        alts = alleles[1:]
+
+        if len(alts) > 1:
+            var_list = []
+            for alt in alts:
+                v = SNP(chrom, pos, rs, ref, alt)
+                var_list.append(v)
+            return var_list
+
+        return SNP(chrom, pos, rs, ref, alts[0])
 
     def __repr__(self):
         return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref, self.alt)
