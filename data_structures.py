@@ -115,24 +115,24 @@ class SNP(object):
             raise Exception("Could not find all the information to create SNP "
                 "object from Ensembl.")
 
-        return Variant.from_str(pos, rs=rs)
+        return SNP.from_str(pos, rs=rs)
 
 
     @classmethod
     def from_str(cls, s, rs=None):
         """Parses a variant object from a str of the form chrXX:YYYY_R/A. 
         
-        :param s: The string to parse the Variant from (Format: chrXX:YYY_R/A).
+        :param s: The string to parse the SNP from (Format: chrXX:YYY_R/A).
         :param rs: An optional parameter specifying the rs number.
 
-        :returns: A Variant object.
+        :returns: A SNP object.
 
         """
         s = s.lstrip("chr")
         chrom, s = s.split(":")
         pos, s = s.split("_")
         ref, alt = s.split("/")
-        return Variant(chrom, pos, rs, ref, alt)
+        return SNP(chrom, pos, rs, ref, alt)
 
     def __repr__(self):
         return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref, self.alt)
