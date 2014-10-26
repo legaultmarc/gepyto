@@ -3,6 +3,7 @@ import re
 import urllib2
 import contextlib
 import json
+import logging
 
 import settings
 
