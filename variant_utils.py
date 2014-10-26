@@ -26,6 +26,7 @@ def ensembl_snp_in_region(region, build=BUILD):
 
     """
 
+    # rest.ensembl.org/overlap/region/homo_sapiens/19:55152170-55152180?feature=variation&content-type=application/json
     url = ("rest.ensembl.org/overlap/region/homo_sapiens/{region}"
            "?feature=variation"
            "&content-type=application/json")
@@ -68,6 +69,9 @@ def ensembl_snp_in_region(region, build=BUILD):
             for alt in variant["alt_alleles"][1:]:
                 variant_obj = SNP(chrom, pos, rs, ref, str(alt))
                 variants.append(variant_obj)
+
+    if len(variants) == 0:
+        logging.warning("No SNP detected in region {}.".format(region))
 
     return variants
 

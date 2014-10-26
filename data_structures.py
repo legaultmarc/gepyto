@@ -120,7 +120,7 @@ class SNP(object):
             with contextlib.closing(urllib2.urlopen(url)) as stream:
                 response = json.load(stream)
         except urllib2.HTTPError:
-            print "Request '{}' failed.".format(url)
+            logging.warning("Request '{}' failed.".format(url))
             return None
 
         pos = None
