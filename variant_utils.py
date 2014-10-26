@@ -66,7 +66,7 @@ def ensembl_snp_in_region(region, build=BUILD):
 
             ref = str(variant["alt_alleles"][0])
             for alt in variant["alt_alleles"][1:]:
-                variant_obj = SNP(chrom, pos, rs, ref, alt)
+                variant_obj = SNP(chrom, pos, rs, ref, str(alt))
                 variants.append(variant_obj)
 
     return variants
