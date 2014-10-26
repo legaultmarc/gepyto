@@ -6,7 +6,7 @@ import json
 
 import settings
 
-__all__ = ["Variant", ]
+__all__ = ["SNP", ]
 
 class SNP(object):
     def __init__(self, *args, **kwargs):
