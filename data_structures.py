@@ -134,7 +134,7 @@ class SNP(object):
                 else:
                     # We have an indel. Ignoring.
                     logging.warning("{} is not a SNP (ignoring).".format(
-                        mapping["id"],
+                        response["name"],
                     ))
 
         if not pos:
