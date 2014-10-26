@@ -58,9 +58,9 @@ class SNP(object):
                 "\talt: {alt} ({alt_type})".format(
                     chrom=self.chrom, chrom_type=type(self.chrom),
                     pos=self.pos, pos_type=type(self.pos),
-                    rs=self.rs, pos_type=type(self.rs),
-                    ref=self.ref, pos_type=type(self.ref),
-                    alt=self.alt, pos_type=type(self.alt),
+                    rs=self.rs, rs_type=type(self.rs),
+                    ref=self.ref, ref_type=type(self.ref),
+                    alt=self.alt, alt_type=type(self.alt),
                 )
             )
             print e
