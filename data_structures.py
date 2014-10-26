@@ -1,4 +1,11 @@
 
+import re
+import urllib2
+import contextlib
+import json
+
+import settings
+
 __all__ = ["Variant", ]
 
 class SNP(object):
@@ -73,7 +80,7 @@ class SNP(object):
         ])
 
     @classmethod
-    def from_ensembl_api(cls, rs, build="GRCh37"):
+    def from_ensembl_api(cls, rs, build=settings.BUILD):
         """Gets the information from the Ensembl REST API.
 
         :param rs: The rs number for the variant of interest.
