@@ -52,11 +52,11 @@ class SNP(object):
             logging.critical(
                 "Assertion failed constructing the SNP object. \n"
                 "Parameters were: \n" 
-                "\tchrom: {chrom} ({chrom_type})"
-                "\tpos: {pos} ({pos_type})"
-                "\trs: {rs} ({rs_type})"
-                "\tref: {ref} ({ref_type})"
-                "\talt: {alt} ({alt_type})".format(
+                "\tchrom: {chrom} ({chrom_type})\n"
+                "\tpos: {pos} ({pos_type})\n"
+                "\trs: {rs} ({rs_type})\n"
+                "\tref: {ref} ({ref_type})\n"
+                "\talt: {alt} ({alt_type})\n".format(
                     chrom=self.chrom, chrom_type=type(self.chrom),
                     pos=self.pos, pos_type=type(self.pos),
                     rs=self.rs, rs_type=type(self.rs),
@@ -64,7 +64,7 @@ class SNP(object):
                     alt=self.alt, alt_type=type(self.alt),
                 )
             )
-            print e
+            raise e
 
     def get_position(self):
         """Returns a variant in the standard chrXX:pos notation. """
@@ -126,9 +126,16 @@ class SNP(object):
         pos = None
         for mapping in response["mappings"]:
             if mapping["assembly_name"] == build:
-                pos = "chr{}_{}".format(
-                    mapping["location"].split("-")[0], mapping["allele_string"]
-                )
+                if mapping["start"] == mapping["end"]: # Only SNPs.
+                    pos = "chr{}_{}".format(
+                        mapping["location"].split("-")[0],
+                        mapping["allele_string"]
+                    )
+                else:
+                    # We have an indel. Ignoring.
+                    logging.warning("{} is not a SNP (ignoring).".format(
+                        mapping["id"],
+                    ))
 
         if not pos:
             raise Exception("Could not find all the information to create SNP "
