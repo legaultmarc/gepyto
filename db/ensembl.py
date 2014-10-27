@@ -13,7 +13,15 @@ __all__ = ["query_ensembl", ]
 
 LAST_QUERY = 0
 
-def query_ensembl(url):
+def get_json(url):
+    """Query the given url and get a json reponse.
+
+    :param url: The API url to query.
+    :type url: str
+
+    :returns: A python object loaded from the JSON response from the server.
+
+    """
     global LAST_QUERY
 
     this_query_time = time.time()
@@ -36,10 +44,21 @@ def query_ensembl(url):
             if cur_rate > max_rate:
                 sleep(0.5)
 
+            # If we busted we wait what they ask us to wait.
+            if remaining == 0:
+                sleep_time = int(response_info.getheader("Retry-After"))
+                logging.info("Waiting {}s before next Ensembl request (at "
+                             "the server's request).".format(sleep_time))
+                sleep(sleep_time)
+
     except urllib2.HTTPError as e:
         logging.warning("Request '{}' failed.".format(url)) 
         logging.warning("[{}] {}".format(e.code, e.reason)) 
         return None
 
     return response
+
+
+# This is an alias for better code readability.
+query_ensembl = get_json
 
