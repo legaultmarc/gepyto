@@ -9,7 +9,7 @@ import logging
 from settings import BUILD
 from data_structures import SNP, Indel
 
-def ensembl_variant_in_region(region, build=BUILD):
+def ensembl_variants_in_region(region, build=BUILD):
     """Queries a genome region of the form chr3:123-456 for variants using Ensembl API.
 
     :param region: The region to query.
