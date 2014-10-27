@@ -13,8 +13,8 @@ __all__ = ["query_ensembl", ]
 
 LAST_QUERY = 0
 
-def get_json(url):
-    """Query the given url and get a json reponse.
+def query_ensembl(url):
+    """Query the given (Ensembl rest api) url and get a json reponse.
 
     :param url: The API url to query.
     :type url: str
@@ -38,27 +38,24 @@ def get_json(url):
             period = int(response_info.getheader("X-RateLimit-Period"))
             remaining = int(response_info.getheader("X-RateLimit-Remaining"))
 
-            # Max rate (requests/s) to not exceed quota:
-            max_rate = 1.0 * remaining / reset
-            cur_rate = 2.0 / delta_t
-            if cur_rate > max_rate:
-                sleep(0.5)
-
-            # If we busted we wait what they ask us to wait.
-            if remaining == 0:
-                sleep_time = int(response_info.getheader("Retry-After"))
-                logging.info("Waiting {}s before next Ensembl request (at "
-                             "the server's request).".format(sleep_time))
-                sleep(sleep_time)
+            # Max time for request (s / request) to not exceed quota:
+            max_t = 1.0 * reset / remaining
+            if delta_t < max_t:
+                time.sleep(max_t - delta_t + 0.5) # We add a buffer of 0.5s.
 
     except urllib2.HTTPError as e:
         logging.warning("Request '{}' failed.".format(url)) 
         logging.warning("[{}] {}".format(e.code, e.reason)) 
+        # If we busted we wait what they ask us to wait.
+        if e.code == 429:
+            sleep_time = float(e.info().getheader("Retry-After"))
+            logging.warning("Waiting {}s before next Ensembl request (at "
+                         "the server's request).".format(sleep_time))
+            time.sleep(sleep_time)
+
+            return query_ensembl(url)
+
         return None
 
     return response
-
-
-# This is an alias for better code readability.
-query_ensembl = get_json
 
