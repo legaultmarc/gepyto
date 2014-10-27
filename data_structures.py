@@ -2,13 +2,14 @@
 import re
 import urllib2
 import contextlib
-import json
 import logging
+import sqlite3
 
 import sys
 import traceback
 
 import settings
+from db import query_ensembl
 
 __all__ = ["SNP", "Indel", "Variant"]
 
@@ -102,13 +103,11 @@ class Variant(object):
             raise Exception("Unknown build '{}'.".format(build))
 
         url = url.format(snp=rs)
-        try:
-            with contextlib.closing(urllib2.urlopen(url)) as stream:
-                response = json.load(stream)
-        except urllib2.HTTPError:
-            logging.warning("Request '{}' failed.".format(url))
-            return None
+        response = query_ensembl(url)
 
+        if response is None:
+            return response
+        
         pos = None
         for mapping in response["mappings"]:
             if mapping["assembly_name"] == build:
@@ -218,6 +217,9 @@ class Indel(Variant):
         )
 
     def __eq__(self, other):
+        if type(self) is not type(other):
+            return False
+
         return (
             self.chrom == other.chrom and
             self.start == other.start and
@@ -341,6 +343,9 @@ class SNP(Variant):
         return SNP(chrom, pos, rs, ref, alts[0])
 
     def __eq__(self, other):
+        if type(self) is not type(other):
+            return False
+
         return (
             self.chrom == other.chrom and
             self.pos == other.pos and

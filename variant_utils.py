@@ -1,13 +1,13 @@
 # Utilities to handle variant data.
 
 import re
-import json
 import urllib2
 import contextlib
 import logging
 
 from settings import BUILD
 from data_structures import SNP, Indel
+from db.ensembl import query_ensembl
 
 def ensembl_variants_in_region(region, build=BUILD):
     """Queries a genome region of the form chr3:123-456 for variants using Ensembl API.
@@ -39,8 +39,7 @@ def ensembl_variants_in_region(region, build=BUILD):
 
     url = url.format(region=region)
 
-    with contextlib.closing(urllib2.urlopen(url)) as stream:
-        res = json.load(stream)            
+    res = query_ensembl(url)
 
     variants = []
     for variant in res:
