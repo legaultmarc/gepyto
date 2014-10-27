@@ -168,7 +168,6 @@ class Indel(Variant):
             assert re.match(r"([0-9]{1,2}|MT|X|Y)", str(self.chrom))
             assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
             assert type(self.start) is int and type(self.end) is int
-            assert self.start < self.end
             assert type(self.ref) is str
             assert type(self.alt) is str
         except AssertionError as e:

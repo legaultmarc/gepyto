@@ -7,9 +7,9 @@ import contextlib
 import logging
 
 from settings import BUILD
-from data_structures import SNP
+from data_structures import SNP, Indel
 
-def ensembl_snp_in_region(region, build=BUILD):
+def ensembl_variant_in_region(region, build=BUILD):
     """Queries a genome region of the form chr3:123-456 for variants using Ensembl API.
 
     :param region: The region to query.
@@ -21,19 +21,17 @@ def ensembl_snp_in_region(region, build=BUILD):
     :returns: A list of :class:`data_structures.SNP`.
     :rtype: list
 
-    Note: For now, as the name implies, this function is limited to SNPs and
-    not to any kind of short variation.
-
     """
 
-    # rest.ensembl.org/overlap/region/homo_sapiens/19:55152170-55152180?feature=variation&content-type=application/json
     url = ("rest.ensembl.org/overlap/region/homo_sapiens/{region}"
            "?feature=variation"
            "&content-type=application/json")
 
     if build == "GRCh37":
         url = "http://grch37." + url
-    elif build != "GRCh38":
+    elif build == "GRCh38":
+        url = "http://" + url
+    else:
         raise Exception("Unknown build '{}'.".format(build))
 
     if region.startswith("chr"):
@@ -46,29 +44,32 @@ def ensembl_snp_in_region(region, build=BUILD):
 
     variants = []
     for variant in res:
-        if variant["start"] == variant["end"]:
-            # Variant is a SNP.
-            # Check some stuff.
-            assert variant["feature_type"] == "variation"
-            assert variant["assembly_name"] == build
+        # Check some stuff.
+        assert variant["feature_type"] == "variation"
+        assert variant["assembly_name"] == build
 
-            # Build the variant.
-            chrom = str(variant["seq_region_name"])
-            pos = variant["start"]
-            rs = str(variant["id"])
-            if type(rs) is str and not rs.startswith("rs"):
-                # We ignore the id if it's not from dbSNP.
-                rs = None
+        # Build the variant.
+        chrom = str(variant["seq_region_name"])
+        start = variant["start"]
+        end = variant["end"]
+        rs = str(variant["id"])
+        if type(rs) is str and not rs.startswith("rs"):
+            # We ignore the id if it's not from dbSNP.
+            rs = None
 
-            if variant["alt_alleles"] < 2:
-                # Weirdly, we have less than two alleles.
-                logging.warning("{} has only one allele (ignored).".format(rs))
-                continue
+        if variant["alt_alleles"] < 2:
+            # Weirdly, we have less than two alleles.
+            logging.warning("{} has only one allele (ignored).".format(rs))
+            continue
 
-            ref = str(variant["alt_alleles"][0])
-            for alt in variant["alt_alleles"][1:]:
-                variant_obj = SNP(chrom, pos, rs, ref, str(alt))
-                variants.append(variant_obj)
+        ref = str(variant["alt_alleles"][0])
+        for alt in variant["alt_alleles"][1:]:
+            if start == end:
+                variant_obj = SNP(chrom, start, rs, ref, str(alt))
+            else:
+                variant_obj = Indel(chrom, start, end, rs, ref, str(alt))
+
+            variants.append(variant_obj)
 
     if len(variants) == 0:
         logging.warning("No SNP detected in region {}.".format(region))
