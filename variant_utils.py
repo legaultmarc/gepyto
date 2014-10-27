@@ -63,8 +63,14 @@ def ensembl_variants_in_region(region, build=BUILD):
             continue
 
         ref = str(variant["alt_alleles"][0])
+
+        is_snp = True
+        for allele in variant["alt_alleles"]:
+            if allele == "-" or len(allele) > 1:
+                is_snp = False
+
         for alt in variant["alt_alleles"][1:]:
-            if start == end:
+            if is_snp:
                 variant_obj = SNP(chrom, start, rs, ref, str(alt))
             else:
                 variant_obj = Indel(chrom, start, end, rs, ref, str(alt))
