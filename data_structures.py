@@ -217,6 +217,14 @@ class Indel(Variant):
             self.chrom, self.start, self.ref, self.alt
         )
 
+    def __eq__(self, other):
+        return (
+            self.chrom == other.chrom and
+            self.start == other.start and
+            self.ref == other.ref and
+            self.alt == other.alt
+        )
+
     @classmethod
     def from_ensembl_api(cls, rs, build=settings.BUILD):
         """Gets the information from the Ensembl REST API.
@@ -331,6 +339,14 @@ class SNP(Variant):
             return var_list
 
         return SNP(chrom, pos, rs, ref, alts[0])
+
+    def __eq__(self, other):
+        return (
+            self.chrom == other.chrom and
+            self.pos == other.pos and
+            self.ref == other.ref and
+            self.alt == other.alt
+        )
 
     def __repr__(self):
         return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref, self.alt)
