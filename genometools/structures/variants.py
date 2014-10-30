@@ -8,8 +8,8 @@ import sqlite3
 import sys
 import traceback
 
-import settings
-from db import query_ensembl
+from .. import settings
+from ..db import query_ensembl
 
 __all__ = ["SNP", "Indel", "Variant"]
 

@@ -1,8 +1,8 @@
 
 import unittest
 
-import variant_utils
-from data_structures import SNP, Indel
+from .. import utils
+from ..structures.variants import SNP, Indel
 
 class TestVariantUtils(unittest.TestCase):
 
@@ -26,7 +26,7 @@ class TestVariantUtils(unittest.TestCase):
 
         """
         
-        variants = variant_utils.ensembl_variants_in_region(self.region)
+        variants = utils.variants.ensembl_variants_in_region(self.region)
 
         self.assertEqual(variants[0], self.snp)
         self.assertEqual(variants[1], self.indel)

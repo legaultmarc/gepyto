@@ -5,9 +5,9 @@ import urllib2
 import contextlib
 import logging
 
-from settings import BUILD
-from data_structures import SNP, Indel
-from db.ensembl import query_ensembl
+from ..settings import BUILD
+from ..structures.variants import SNP, Indel
+from ..db.ensembl import query_ensembl
 
 def ensembl_variants_in_region(region, build=BUILD):
     """Queries a genome region of the form chr3:123-456 for variants using Ensembl API.
