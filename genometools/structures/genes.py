@@ -21,6 +21,7 @@ import re
 
 from .. import settings
 from ..db import query_ensembl
+from ..db.appris import get_category_for_transcript
 
 __all__ = ["Gene", ]
 
@@ -42,6 +43,7 @@ class Gene(object):
 
             - symbol: An HGNC symbol.
             - desc: A short description.
+            - exons: A list of pairs of positions for exons.
 
         You can only pass kwargs to build the genes. This makes for more
         eloquent code and avoids mistakes.
@@ -59,6 +61,7 @@ class Gene(object):
         _OPTIONAL_PARAMETERS = {
             "symbol": str,
             "desc": str,
+            "exons": list,
         }
 
         _ALL_PARAMS = dict(_PARAMETERS.items() + _OPTIONAL_PARAMETERS.items())
@@ -78,6 +81,14 @@ class Gene(object):
         assert self.build in ("GRCh37", "GRCh38")
         assert re.match(r"([0-9]{1,2}|MT|X|Y)", self.chrom)
         assert self.start < self.end
+
+    def __repr__(self):
+        return "<Gene:{} (chr{}:{}-{})>".format(
+            self.symbol if self.symbol else "",
+            self.chrom,
+            self.start,
+            self.end
+        )
 
     @classmethod
     def factory_symbol(cls, symbol, build=settings.BUILD):
@@ -110,19 +121,26 @@ class Gene(object):
 
         # The response contains both gene information, the underlying
         # transcripts and the exons. We need to parse all that.
+        transcripts = []
+        exons = []
         for elem in response:
             if elem["feature_type"] == "gene":
-                gene_info = _parse_gene()
+                gene_info = _parse_gene(elem)
             elif elem["feature_type"] == "transcript":
-                transcripts.append(_parse_transcript())
+                transcripts.append(_parse_transcript(elem))
             elif elem["feature_type"] == "exon":
-                exons.append(_parse_exon())
+                exons.append(_parse_exon(elem))
 
-        return Gene(
-            **gene_info,
-            xrefs=xrefs,
-            symbol=symbol,
-        )
+        gene_info["xrefs"] = xrefs
+        gene_info["symbol"] = symbol
+        gene_info["transcripts"] = transcripts
+        gene_info["exons"] = exons
+
+        g = Gene(**gene_info)
+        for tr in transcripts:
+            tr.parent = g
+
+        return g
 
 
     @classmethod
@@ -186,7 +204,68 @@ class Gene(object):
 
 
 class Transcript(object):
-    pass
+    def __init__(self, **kwargs):
+        """Python object representing a transcript.
+
+        Store the following information:
+
+        Required
+
+            - build: The genome build.
+            - chrom: The chromosome.
+            - start and end: The genomic positions for the gene.
+            - enst: The corresponding Ensembl transcript id.
+
+        Optional 
+
+            - appris_cat: The APPRIS category.
+            - parent: The corresponding Gene object.
+            - biotype: The biotype as given by Ensembl.
+
+        """
+        dummy = lambda x: x
+
+        _PARAMETERS = {
+            "build": str,
+            "chrom": str,
+            "start": int,
+            "end": int,
+            "enst": str,
+        }
+
+        _OPTIONAL_PARAMETERS = {
+            "appris_cat": str,
+            "parent": dummy,
+            "biotype": str,
+        }
+
+        _ALL_PARAMS = dict(_PARAMETERS.items() + _OPTIONAL_PARAMETERS.items())
+
+        # Store the passed parameters.
+        for arg, val in kwargs.iteritems():
+            if arg not in _ALL_PARAMS:
+                raise Exception("Unknown parameter {}.".format(arg))
+            setattr(self, arg, _ALL_PARAMS[arg](val))
+
+        # Check that all required arguments were passed.
+        for p in _PARAMETERS:
+            if getattr(self, p, "-1") == "-1":
+                raise Exception("Missing parameter {}.".format(p))
+
+        # Some basic assertions.
+        assert self.build in ("GRCh37", "GRCh38")
+        assert re.match(r"([0-9]{1,2}|MT|X|Y)", self.chrom)
+        assert self.start < self.end
+        assert re.match(r"^ENST[0-9]+$", self.enst)
+
+    def __repr__(self):
+        return "<Transcript:{} (chr{}:{}-{})>".format(
+            self.enst,
+            self.chrom,
+            self.start,
+            self.end,
+        )
+
 
 def _parse_gene(o):
     """Parse gene information from an Ensembl `overlap` query.
@@ -210,6 +289,7 @@ def _parse_gene(o):
 
     return d
 
+
 def _parse_transcript(o):
     """Parse transcript information from an Ensembl `overlap` query.
 
@@ -220,7 +300,25 @@ def _parse_transcript(o):
     :rtype: :py:class`Transcript`
 
     """
-    pass
+    assert o["feature_type"] == "transcript"
+
+    d = {
+        "build": o.get("assembly_name"),
+        "chrom": o.get("seq_region_name"),
+        "start": o.get("start"),
+        "end": o.get("end"),
+        "enst": o.get("id"),
+        "biotype": o.get("biotype"),
+    }
+
+    # Get the APPRIS annotation.
+    try:
+        d["appris_cat"] = get_category_for_transcript(d["enst"])
+    except Exception:
+        pass
+
+    return Transcript(**d)
+
 
 def _parse_exon(o):
     """Parse exon information from an Ensembl `overlap` query.
