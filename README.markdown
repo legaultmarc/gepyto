@@ -5,7 +5,9 @@ submodule for other projects.
 
 # Features
 
-- Python objects for Indels and SNPs.
+- Python objects for Variants including Indels and SNPs.
+- Python objects for Genes and Transcripts.
+- Abstraction of the APPRIS transcript annotation database.
 - Abstraction of the Ensembl API for variant queries in a range and from an rs
   number.
 - Throttling for Ensembl database queries.
@@ -14,5 +16,5 @@ submodule for other projects.
 
 - Checking of reference alleles for Variants using a provided genome reference.
 - Annotation module.
-- Get all genes from region in Ensembl DB.
+- Get all genes from region in Ensembl DB (utils).
 
