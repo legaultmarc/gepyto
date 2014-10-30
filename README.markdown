@@ -14,4 +14,5 @@ submodule for other projects.
 
 - Checking of reference alleles for Variants using a provided genome reference.
 - Annotation module.
+- Get all genes from region in Ensembl DB.
 
