@@ -23,6 +23,7 @@ import sqlite3
 
 from pkg_resources import resource_filename
 
+
 APPRIS_CUR = None
 
 def _load_appris():

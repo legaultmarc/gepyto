@@ -12,7 +12,6 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import re
-import urllib2
 import contextlib
 import logging
 import sqlite3
@@ -22,6 +21,7 @@ import traceback
 
 from .. import settings
 from ..db import query_ensembl
+
 
 __all__ = ["SNP", "Indel", "Variant"]
 

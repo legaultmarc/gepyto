@@ -11,5 +11,5 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
                  "Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
-import variants
+from . import variants
 

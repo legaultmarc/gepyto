@@ -14,13 +14,13 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import re
-import urllib2
 import contextlib
 import logging
 
 from ..settings import BUILD
 from ..structures.variants import SNP, Indel
 from ..db.ensembl import query_ensembl
+
 
 def ensembl_variants_in_region(region, build=BUILD):
     """Queries a genome region of the form chr3:123-456 for variants using Ensembl API.

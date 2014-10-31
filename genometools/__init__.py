@@ -19,9 +19,9 @@ __status__ = "Development"
 
 import unittest.main
 
-import structures
-import utils
-import db
+from . import structures
+from . import utils
+from . import db
 
 
 def test():

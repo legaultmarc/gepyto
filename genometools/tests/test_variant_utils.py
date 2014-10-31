@@ -16,6 +16,7 @@ import unittest
 from .. import utils
 from ..structures.variants import SNP, Indel
 
+
 class TestVariantUtils(unittest.TestCase):
 
     def setUp(self):

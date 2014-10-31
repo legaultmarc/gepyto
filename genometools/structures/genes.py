@@ -13,15 +13,22 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
                  "Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
-import urllib2
 import contextlib
 import json
 import logging
 import re
 
+try:
+    # Python 2 support
+    from urllib2 import urlopen, Request
+except ImportError:
+    # Python 3 support
+    from urllib.request import urlopen, Request
+
 from .. import settings
 from ..db import query_ensembl
 from ..db.appris import get_category_for_transcript
+
 
 __all__ = ["Gene", ]
 
@@ -163,8 +170,8 @@ class Gene(object):
             "Accept": "application/json",    
         }
 
-        req = urllib2.Request(url.format(symbol), headers=headers)
-        with contextlib.closing(urllib2.urlopen(req)) as stream:
+        req = Request(url.format(symbol), headers=headers)
+        with contextlib.closing(urlopen(req)) as stream:
             res = json.load(stream)
 
         # We take the top search hit and run a fetch.
@@ -178,8 +185,8 @@ class Gene(object):
 
         # Use the HGNC Fetch.
         url = "http://rest.genenames.org/fetch/symbol/{}"
-        req = urllib2.Request(url.format(symbol), headers=headers)
-        with contextlib.closing(urllib2.urlopen(req)) as stream:
+        req = Request(url.format(symbol), headers=headers)
+        with contextlib.closing(urlopen(req)) as stream:
             res = json.load(stream)       
 
         # Parse the cross references.

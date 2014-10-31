@@ -17,9 +17,16 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import contextlib
 import json
-import urllib2
 import logging
 import time
+
+try:
+    # Python 2 support
+    from urllib2 import urlopen, HTTPError
+except ImportError:
+    # Python 3 support
+    from urllib.request import urlopen, HTTPError
+
 
 __all__ = ["query_ensembl", ]
 
@@ -41,7 +48,7 @@ def query_ensembl(url):
     LAST_QUERY = this_query_time
 
     try:
-        with contextlib.closing(urllib2.urlopen(url)) as stream:
+        with contextlib.closing(urlopen(url)) as stream:
             response = json.load(stream)
             response_info = stream.info()
 
@@ -55,7 +62,7 @@ def query_ensembl(url):
             if delta_t < max_t:
                 time.sleep(max_t - delta_t + 0.5) # We add a buffer of 0.5s.
 
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         logging.warning("Request '{}' failed.".format(url)) 
         logging.warning("[{}] {}".format(e.code, e.reason)) 
         # If we busted we wait what they ask us to wait.
