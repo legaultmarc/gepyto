@@ -20,6 +20,7 @@ __status__ = "Development"
 import unittest.main
 
 import structures
+import annotation
 import utils
 import db
 

@@ -20,9 +20,11 @@ import gzip
 
 import requests # Install http://docs.python-requests.org/en/latest/
 
+from .. import structures as struct
+
 __all__ = ["cadd", ]
 
-def cadd(variants):
+def cadd_score(variants):
     """Annotate the variants using CADD (cadd.gs.washington.edu).
 
     :param vcf: A list of Variant (or subclass) objects.
@@ -96,7 +98,7 @@ def cadd(variants):
 
             # Read the file and add the C Scores to a copy of the input file.
             with gzip.open(fn) as f:
-                variants = annotate_variants(f, variants)
+                variants = parse_annotation(f)
             os.remove(fn)
 
             return variants
@@ -112,11 +114,107 @@ def cadd(variants):
         ))
 
 
-def annotate_variants(cadd_output, variants):
-    """Takes a file object containing the output from CADD and parses it to annotate the variants in the list.
+def parse_annotation(cadd_output):
+    """Takes a file object containing the output from CADD and parses it.
+
+    :param cadd_output: An open file object representing the output from the 
+                        CADD website.
+    :type cadd_output: Mosty likely :py:class`gzip.GzipFile`
+
+    :returns: A list of annotation tuples of the form (``Transript``, 
+              ``Variant``, ``C score``, ``info``). If the annotation is for 
+              an Ensembl regulatory feature, the ID (ENSR) replaces the
+              ``Transcript`` object.
+    :rtype: list
 
     """
 
+    # We will build a list of tuples as documented.
+    annotations = []
+
+    # We keep objects in memory to avoid redundancy.
+    variants = {}
+    transcripts = {}
+
+    # Parse the CADD annotation file.
+    header = None
     for line in cadd_output:
-        print line
+        if line.startswith("##"):
+            # Skip header lines that are not column labels.
+            continue
+
+        line = line.rstrip()
+        line = [i.upper() for i in line.split("\t")]
+
+        if line[0] == "#CHROM":
+            line[0] = line[0].lstrip("#")
+            header = {col: idx for idx, col in enumerate(line)}
+            continue
+
+        # Check if we already have this variant.
+        chrom = line[header["CHROM"]]
+        pos = int(line[header["POS"]])
+        ref = line[header["REF"]]
+        alt = line[header["ALT"]]
+        var_type = line[header["TYPE"]]
+
+        tu = (chrom, pos, ref, alt, var_type)
+        if tu in variants:
+            v = variants[tu]
+        else:
+            # We need to create the variant.
+            if var_type == "SNV" and len(ref) == 1 and len(alt) == 1:
+                # Create a SNP.
+                v = struct.variants.SNP(
+                    chrom=chrom,
+                    pos=pos,
+                    ref=ref,
+                    alt=alt,
+                    rs=None,
+                )
+            else:
+                # Create an indel.
+                v = struct.variants.Indel(
+                    chrom=chrom,
+                    start=pos,
+                    end=pos + int(line[header["LENGTH"]]),
+                    ref=ref,
+                    alt=alt,
+                    rs=None,
+                )
+
+            # We save it for future use.
+            variants[tu] = v
+
+        # Check if we already have this transcript.
+        feature_id = line[header["FEATUREID"]]
+        if feature_id in transcripts:
+            feature = transcripts[feature_id]
+        elif feature_id.startswith("ENSR"):
+            feature = feature_id
+        else:
+            # We need to create the transcript.
+            ov_transcripts = struct.genes.Transcript.factory_position(
+                "chr{}:{}-{}".format(chrom, pos, pos)
+            )
+            for tr in ov_transcripts:
+                if tr.enst == feature_id:
+                    feature = tr
+                    transcripts[feature_id] = tr
+                    break
+
+        c = float(line[header["CSCORE"]])
+        info = {
+            "poly": line[header["POLYPHENCAT"]],
+            "sift": line[header["SIFTCAT"]],
+            "gene_id": line[header["GENEID"]],
+            "vert_phylop": line[header["VERPHYLOP"]],
+            "annotation_type": line[header["ANNOTYPE"]],
+            "consequence": line[header["CONSEQUENCE"]],
+        }
+        annotations.append(
+            (feature, v, c, info)
+        )
+
+    return annotations
 

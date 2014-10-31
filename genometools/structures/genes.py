@@ -258,6 +258,37 @@ class Transcript(object):
         assert self.start < self.end
         assert re.match(r"^ENST[0-9]+$", self.enst)
 
+    @classmethod
+    def factory_position(cls, region, build=settings.BUILD):
+        """Gets a list of transcripts overlapping with the given position.
+
+        :param pos: A genomic position of the form `chr2:12345-12347`.
+        :type pos: str
+
+        :returns: A list of :py:class`Transcript`
+        :rtype: list
+
+        This method uses the Ensembl API.
+
+        """
+
+        assert re.match(r"^chr([0-9]{1,2}|MT|X|Y):[0-9]+-[0-9]+$", region)
+        region = region.lstrip("chr")
+        region = region.replace("-", "..")
+
+        url = "http://grch37." if build == "GRCh37" else "http://"
+        url += ("rest.ensembl.org/overlap/region/homo_sapiens/{}"
+                "?feature=transcript"
+                "&content-type=application/json")
+        url = url.format(region)
+
+        response = query_ensembl(url)
+        transcripts = []
+        for tr in response:
+            transcripts.append(_parse_transcript(tr))
+
+        return transcripts
+
     def __repr__(self):
         return "<Transcript:{} (chr{}:{}-{})>".format(
             self.enst,
