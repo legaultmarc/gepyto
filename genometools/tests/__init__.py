@@ -13,6 +13,7 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-from .test_variant_utils import *
-from .test_structures import *
+import unittest
+
+test_suite = unittest.defaultTestLoader.discover(".")
 

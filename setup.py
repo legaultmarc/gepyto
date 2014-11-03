@@ -9,7 +9,6 @@
 import os
 from setuptools import setup
 
-
 setup(name="genometools",
       version="0.1",
       description=("Utilities and tools to interface with genomic databases "
@@ -25,5 +24,6 @@ setup(name="genometools",
       classifiers=["Operating System :: Linux",
                    "Programming Language :: Python",
                    "Programming Language :: Python :: 2.7",
-                   "Programming Language :: Python :: 3.4"])
+                   "Programming Language :: Python :: 3.4"],
+      test_suite="genometools.tests.test_suite")
 
