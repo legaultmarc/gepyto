@@ -15,6 +15,7 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
+import sys
 import contextlib
 import json
 import logging
@@ -97,8 +98,21 @@ class Gene(object):
         assert self.start < self.end
 
     def __repr__(self):
+        # Getting the best name
+        name_repr = None
+        if hasattr(self, "symbol"):
+            name_repr = self.symbol
+        else:
+            for ref in ("ensembl_gene_id", "entrez_id", "ucsc_id"):
+                if ref in self.xrefs:
+                    name_repr = "{} ({})".format(self.xrefs[ref], ref)
+                    break
+
+        if name_repr is None:
+            name_repr = "Unknown"
+
         return "<Gene:{} (chr{}:{}-{})>".format(
-            self.symbol if self.symbol else "",
+            name_repr,
             self.chrom,
             self.start,
             self.end
@@ -116,7 +130,7 @@ class Gene(object):
         :rtype: :py:class:`Gene`
 
         """
-        xrefs = Gene.get_xrefs_from_symbol(symbol)
+        xrefs = Gene.get_xrefs_from_symbol(symbol, build=build)
         ensembl_id = xrefs.get("ensembl_id")
 
         if ensembl_id is None:
@@ -161,11 +175,11 @@ class Gene(object):
                 exons.append(_parse_exon(elem))
 
         if xrefs is None:
-            xrefs = Gene.get_xrefs_from_ensembl_id(ensembl_id)
+            xrefs = Gene.get_xrefs_from_ensembl_id(ensembl_id, build=build)
 
-        # TODO: xrefs["symbol"] will fail if xrefs is None...
+        if "symbol" in xrefs:
+            gene_info["symbol"] = xrefs.pop("symbol")
         gene_info["xrefs"] = xrefs
-        gene_info["symbol"] = xrefs["symbol"]
         gene_info["transcripts"] = transcripts
         gene_info["exons"] = exons
 
@@ -177,7 +191,7 @@ class Gene(object):
 
 
     @classmethod
-    def get_xrefs_from_ensembl_id(cls, ensembl_id):
+    def get_xrefs_from_ensembl_id(cls, ensembl_id, build=settings.BUILD):
         """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a gene ID for other databases.
 
         :param ensembl_id: The gene Ensembl ID to query.
@@ -193,7 +207,7 @@ class Gene(object):
 
 
     @classmethod
-    def get_xrefs_from_symbol(cls, symbol):
+    def get_xrefs_from_symbol(cls, symbol, build=settings.BUILD):
         """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a gene ID for other databases.
 
         :param symbol: The gene symbol to query.
@@ -209,7 +223,7 @@ class Gene(object):
 
 
     @classmethod
-    def get_xrefs(cls, field, query):
+    def get_xrefs(cls, field, query, build=settings.BUILD):
         """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a gene ID for other databases.
 
         :param field: A searchable fields.
@@ -240,41 +254,62 @@ class Gene(object):
         if res["response"]["numFound"] > 0:
             doc = res["response"]["docs"][0]
             assert doc["score"] == res["response"]["maxScore"]
-        else:
-            logging.warning("No gene with {field} {query} "
-                            "found.".format(field=field, query=query))
-            return None
 
-        # Use the HGNC Fetch.
-        url = "http://rest.genenames.org/fetch/{field}/{query}"
-        req = Request(url.format(field=field, query=query), headers=headers)
-        with contextlib.closing(urlopen(req)) as stream:
-            res = json.loads(stream.read().decode())
+            # Use the HGNC Fetch.
+            url = "http://rest.genenames.org/fetch/{field}/{query}"
+            req = Request(url.format(field=field, query=query), headers=headers)
+            with contextlib.closing(urlopen(req)) as stream:
+                res = json.loads(stream.read().decode())
 
-        # Parse the cross references.
-        if res["response"]["numFound"] > 0:
-            doc = res["response"]["docs"][0]
+            # Parse the cross references.
+            if res["response"]["numFound"] > 0:
+                doc = res["response"]["docs"][0]
 
-            # Check the right symbol was found
-            assert doc.get(field) == query
+                # Check the right symbol was found
+                assert doc.get(field) == query
 
-            id_dict = {
-                "name": doc.get("name"),
-                "symbol": doc.get("symbol"),
-                "ncbi_id": doc.get("entrez_id"),
-                "cosmic_id": doc.get("cosmic"),
-                "refseq_ids": doc.get("refseq_accession"),
-                "ensembl_id": doc.get("ensembl_gene_id"),
-                "omim_ids": doc.get("omim_id"),
-                "uniprot_ids": doc.get("uniprot_ids"),
-                "ucsc_id": doc.get("ucsc_id"),
-            }
-            id_dict = {k: str(v) for (k, v) in id_dict.items()}
+                id_dict = {
+                    "name": doc.get("name"),
+                    "symbol": doc.get("symbol"),
+                    "ncbi_id": doc.get("entrez_id"),
+                    "cosmic_id": doc.get("cosmic"),
+                    "refseq_ids": doc.get("refseq_accession"),
+                    "ensembl_id": doc.get("ensembl_gene_id"),
+                    "omim_ids": doc.get("omim_id"),
+                    "uniprot_ids": doc.get("uniprot_ids"),
+                    "ucsc_id": doc.get("ucsc_id"),
+                }
+                id_dict = {k: str(v) for (k, v) in id_dict.items()}
+
+                return id_dict
+            else:
+                raise Exception("No gene returned by HGNC fetch on "
+                    "{field} {query}.".format(field=field, query=query))
+
+        elif field == "ensembl_gene_id":
+            # Get from Ensembl
+            url = "http://grch37." if build == "GRCh37" else "http://"
+            url += ("rest.ensembl.org/xrefs/id/{}"
+                    "?content-type=application/json")
+            url = url.format(query)
+
+            response = query_ensembl(url)
+
+            id_dict = {"ensembl_gene_id": query}
+            for db_info in response:
+                # Entrez
+                if db_info["dbname"] == "EntrezGene":
+                    id_dict["entrez_id"] = db_info["primary_id"]
+                    continue
+
+                # UniPROT
+                if db_info["dbname"] == "Uniprot_gn":
+                    id_dict["uniprot_ids"] = db_info["primary_id"]
 
             return id_dict
+
         else:
-            raise Exception("No gene returned by HGNC fetch on "
-                "{field} {query}.".format(field=field, query=query))
+            return {}
 
 
 class Transcript(object):
