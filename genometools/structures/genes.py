@@ -36,29 +36,31 @@ __all__ = ["Gene", ]
 
 
 class Gene(object):
+    """Python object representing a gene.
+
+    Store the following information:
+
+    Required
+
+        - build: The genome build.
+        - chrom: The chromosome.
+        - start and end: The genomic positions for the gene.
+        - xrefs: A dict of id mappings to multiple databases.
+        - transcripts: A list of Transcript objects.
+
+    Optional 
+
+        - symbol: An HGNC symbol.
+        - desc: A short description.
+        - exons: A list of pairs of positions for exons.
+
+    You can only pass kwargs to build the genes. This makes for more
+    eloquent code and avoids mistakes.
+
+    """
+
     def __init__(self, **kwargs):
-        """Python object representing a gene.
 
-        Store the following information:
-
-        Required
-
-            - build: The genome build.
-            - chrom: The chromosome.
-            - start and end: The genomic positions for the gene.
-            - xrefs: A dict of id mappings to multiple databases.
-            - transcripts: A list of Transcript objects.
-
-        Optional 
-
-            - symbol: An HGNC symbol.
-            - desc: A short description.
-            - exons: A list of pairs of positions for exons.
-
-        You can only pass kwargs to build the genes. This makes for more
-        eloquent code and avoids mistakes.
-
-        """
         _PARAMETERS = {
             "build": str,
             "chrom": str,
@@ -111,7 +113,7 @@ class Gene(object):
         :type symbol: str
 
         :returns: The Gene object.
-        :rtype: :py:class`Gene`
+        :rtype: :py:class:`Gene`
 
         """
         xrefs = Gene.get_xrefs_from_symbol(symbol)
@@ -276,25 +278,26 @@ class Gene(object):
 
 
 class Transcript(object):
+    """Python object representing a transcript.
+
+    Store the following information:
+
+    Required
+
+        - build: The genome build.
+        - chrom: The chromosome.
+        - start and end: The genomic positions for the gene.
+        - enst: The corresponding Ensembl transcript id.
+
+    Optional 
+
+        - appris_cat: The APPRIS category.
+        - parent: The corresponding Gene object.
+        - biotype: The biotype as given by Ensembl.
+
+    """
+
     def __init__(self, **kwargs):
-        """Python object representing a transcript.
-
-        Store the following information:
-
-        Required
-
-            - build: The genome build.
-            - chrom: The chromosome.
-            - start and end: The genomic positions for the gene.
-            - enst: The corresponding Ensembl transcript id.
-
-        Optional 
-
-            - appris_cat: The APPRIS category.
-            - parent: The corresponding Gene object.
-            - biotype: The biotype as given by Ensembl.
-
-        """
         dummy = lambda x: x
 
         _PARAMETERS = {

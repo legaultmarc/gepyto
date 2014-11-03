@@ -28,6 +28,9 @@ from ..db import query_ensembl
 __all__ = ["SNP", "Indel", "Variant"]
 
 class Variant(object):
+    """Base class for genome Variants.
+
+    """
 
     def __init__(self, *args, **kwargs):
         """Super constructor for Variant objects. 
@@ -155,15 +158,15 @@ class Variant(object):
 
 
 class Indel(Variant):
+    """Class representing short insertions/deletions (Indels).
+
+    Either initialize with the parameters corresponding to:
+    ``chrom, start, end, rs, ref, alt`` or by using the corresponding
+    named parameters.
+
+    """
+
     def __init__(self, *args, **kwargs):
-        """Initialize an Indel.
-
-        Either call this method with the parameters corresponding to:
-        ``chrom, start, end, rs, ref, alt`` or by using the corresponding
-        named parameters.
-
-        """
-
         _PARAMETERS = [
             "chrom", 
             "start",
@@ -254,14 +257,13 @@ class Indel(Variant):
 
 
 class SNP(Variant):
+    """Class representing a Single Nucleotide Polymorphism (SNP). 
+
+    Instances can be created in two ways: either by providing ordered fields: 
+    ``chrom, pos, rs, ref, alt`` or by using named parameters.
+
+    """
     def __init__(self, *args, **kwargs):
-        """Initialize a SNP. 
-
-        This can be done in two ways: either by providing ordered fields: 
-        ``chrom, pos, rs, ref, alt`` or by using named parameters.
-
-        """
-
         _PARAMETERS = [
             "chrom", 
             "pos",
