@@ -1,12 +1,16 @@
 
-Structures for Genes
-=====================
+Python Objects (``structures``)
+================================
+
+Genes
+------
 
 .. automodule:: genometools.structures.genes
     :members:
 
-Structures for Variants
-========================
+Variants
+---------
+
 .. automodule:: genometools.structures.variants
     :members:
 

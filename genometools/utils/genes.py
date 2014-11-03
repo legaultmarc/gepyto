@@ -31,7 +31,7 @@ def ensembl_genes_in_region(region, build=BUILD):
     :param build: The genome build to use (GRCh37 or GRCh38).
     :type build: str
 
-    :returns: A list of :class:`data_structures.Gene`.
+    :returns: A list of :py:class:`genometools.structures.genes.Gene`.
     :rtype: list
 
     """

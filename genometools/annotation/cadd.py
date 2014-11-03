@@ -19,12 +19,10 @@ import uuid
 import os
 import gzip
 
-import requests # Install http://docs.python-requests.org/en/latest/
-
 from .. import structures as struct
 
 
-__all__ = ["cadd", ]
+__all__ = ["cadd_score", ]
 
 def cadd_score(variants):
     """Annotate the variants using CADD (cadd.gs.washington.edu).
@@ -32,10 +30,13 @@ def cadd_score(variants):
     :param vcf: A list of Variant (or subclass) objects.
     :type vcf: :py:class`genometools.structures.variants.Variant`
 
-    :returns: A list of the variants with an added "c_score" attribute.
+    :returns: A list of annotations as described by :py:func:`parse_annotation`.
     :rtype: list
 
     """
+
+    # We import here not to break on optional modules.
+    import requests # Install http://docs.python-requests.org/en/latest/
 
     # We need to send a form with the following information:
     # file: a vcf file.
@@ -46,6 +47,8 @@ def cadd_score(variants):
 
     # Then we parse the html to find a link to a anno_.+\.tsv\.gz
     # We check every 20s to see if we can download the file.
+
+    # TODO: We need to parse the html instead of this hacky regex.
 
     form = {
         "inclAnno": "Yes",
@@ -100,10 +103,10 @@ def cadd_score(variants):
 
             # Read the file and add the C Scores to a copy of the input file.
             with gzip.open(fn) as f:
-                variants = parse_annotation(f)
+                annotations = parse_annotation(f)
             os.remove(fn)
 
-            return variants
+            return annotations
 
         else:
             print(m)
@@ -121,7 +124,7 @@ def parse_annotation(cadd_output):
 
     :param cadd_output: An open file object representing the output from the 
                         CADD website.
-    :type cadd_output: Mosty likely :py:class`gzip.GzipFile`
+    :type cadd_output: Mosty likely :py:class:`gzip.GzipFile`
 
     :returns: A list of annotation tuples of the form (``Transript``, 
               ``Variant``, ``C score``, ``info``). If the annotation is for 
