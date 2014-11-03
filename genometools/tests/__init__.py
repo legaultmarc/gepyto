@@ -14,4 +14,5 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
 from .test_variant_utils import *
+from .test_structures import *
 

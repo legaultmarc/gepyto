@@ -136,7 +136,7 @@ class Gene(object):
         :type ensembl_id: str
 
         :returns: The Gene object.
-        :rtype: :py:class`Gene`
+        :rtype: :py:class:`Gene`
 
         """
         url = "http://grch37." if build == "GRCh37" else "http://"
@@ -152,13 +152,23 @@ class Gene(object):
         # transcripts and the exons. We need to parse all that.
         transcripts = []
         exons = []
+        gene_info = None
         for elem in response:
-            if elem["feature_type"] == "gene":
+            # We skip irrelevent entries (not on this build).
+            if elem.get("assembly_name") and elem["assembly_name"] != build:
+                continue
+
+            if elem["feature_type"] == "gene" and elem["id"] == ensembl_id:
                 gene_info = _parse_gene(elem)
             elif elem["feature_type"] == "transcript":
                 transcripts.append(_parse_transcript(elem))
             elif elem["feature_type"] == "exon":
                 exons.append(_parse_exon(elem))
+
+        if gene_info is None:
+            raise Exception("Could not find gene {} in Ensembl.".format(
+                ensembl_id,
+            ))
 
         if xrefs is None:
             xrefs = Gene.get_xrefs_from_ensembl_id(ensembl_id)
@@ -174,7 +184,6 @@ class Gene(object):
             tr.parent = g
 
         return g
-
 
     @classmethod
     def get_xrefs_from_ensembl_id(cls, ensembl_id):
@@ -343,7 +352,7 @@ class Transcript(object):
         :param pos: A genomic position of the form `chr2:12345-12347`.
         :type pos: str
 
-        :returns: A list of :py:class`Transcript`
+        :returns: A list of :py:class:`Transcript`
         :rtype: list
 
         This method uses the Ensembl API.
@@ -406,7 +415,7 @@ def _parse_transcript(o):
     :type o: dict
 
     :returns: A Transcript object representing the transcript.
-    :rtype: :py:class`Transcript`
+    :rtype: :py:class:`Transcript`
 
     """
     assert o["feature_type"] == "transcript"
