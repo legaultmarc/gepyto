@@ -121,6 +121,20 @@ class Gene(object):
                     symbol 
                 ))
 
+        return Gene.factory_id(ensembl_id, xrefs=xrefs, build=build)
+
+
+    @classmethod
+    def factory_id(cls, ensembl_id, xrefs=None, build=settings.BUILD):
+        """Builds a gene object from it's Ensembl ID.
+
+        :param ensembl_id: The Ensembl ID.
+        :type ensembl_id: str
+
+        :returns: The Gene object.
+        :rtype: :py:class`Gene`
+
+        """
         url = "http://grch37." if build == "GRCh37" else "http://"
         url += ("rest.ensembl.org/overlap/id/{}"
                 "?content-type=application/json"
@@ -142,8 +156,12 @@ class Gene(object):
             elif elem["feature_type"] == "exon":
                 exons.append(_parse_exon(elem))
 
+        if xrefs is None:
+            xrefs = Gene.get_xrefs_from_ensembl_id(ensembl_id)
+
+        # TODO: xrefs["symbol"] will fail if xrefs is None...
         gene_info["xrefs"] = xrefs
-        gene_info["symbol"] = symbol
+        gene_info["symbol"] = xrefs["symbol"]
         gene_info["transcripts"] = transcripts
         gene_info["exons"] = exons
 
@@ -152,6 +170,22 @@ class Gene(object):
             tr.parent = g
 
         return g
+
+
+    @classmethod
+    def get_xrefs_from_ensembl_id(cls, ensembl_id):
+        """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a gene ID for other databases.
+
+        :param ensembl_id: The gene Ensembl ID to query.
+        :type ensembl_id: str
+
+        :returns: A dict representing information on the gene.
+        :rtype: dict
+
+        If no gene with this Ensembl ID can be found, `None` is returned.
+
+        """
+        return Gene.get_xrefs("ensembl_gene_id", ensembl_id)
 
 
     @classmethod
@@ -167,37 +201,62 @@ class Gene(object):
         If no gene with this symbol can be found, `None` is returned.
 
         """
+        return Gene.get_xrefs("symbol", symbol)
 
-        url = "http://rest.genenames.org/search/symbol:{}"
 
-        headers = {
-            "Accept": "application/json",    
-        }
+    @classmethod
+    def get_xrefs(cls, field, query):
+        """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a gene ID for other databases.
 
-        req = Request(url.format(symbol), headers=headers)
+        :param field: A searchable fields.
+        :type field: str
+
+        :param query: The query.
+        :type query: str
+
+        :returns: A dict representing information on the gene.
+        :rtype: dict
+
+        If no gene with this symbol can be found, `None` is returned.
+
+        """
+        # Checks if the field is valid
+        assert field in {"ccds_id", "ensembl_gene_id", "entrez_id", "hgnc_id",
+                         "name", "symbol", "ucsc_id", "uniprot_ids", "vega_id"}
+
+        # The url and header
+        url = "http://rest.genenames.org/search/{field}:{query}"
+        headers = {"Accept": "application/json"}
+
+        req = Request(url.format(field=field, query=query), headers=headers)
         with contextlib.closing(urlopen(req)) as stream:
             res = json.loads(stream.read().decode())
 
         # We take the top search hit and run a fetch.
         if res["response"]["numFound"] > 0:
             doc = res["response"]["docs"][0]
-            symbol = doc["symbol"]
             assert doc["score"] == res["response"]["maxScore"]
         else:
-            logging.warning("No gene with HGNC symbol {} found.".format(symbol))
+            logging.warning("No gene with {field} {query} "
+                            "found.".format(field=field, query=query))
             return None
 
         # Use the HGNC Fetch.
-        url = "http://rest.genenames.org/fetch/symbol/{}"
-        req = Request(url.format(symbol), headers=headers)
+        url = "http://rest.genenames.org/fetch/{field}/{query}"
+        req = Request(url.format(field=field, query=query), headers=headers)
         with contextlib.closing(urlopen(req)) as stream:
             res = json.loads(stream.read().decode())
 
         # Parse the cross references.
         if res["response"]["numFound"] > 0:
             doc = res["response"]["docs"][0]
+
+            # Check the right symbol was found
+            assert doc.get(field) == query
+
             id_dict = {
                 "name": doc.get("name"),
+                "symbol": doc.get("symbol"),
                 "ncbi_id": doc.get("entrez_id"),
                 "cosmic_id": doc.get("cosmic"),
                 "refseq_ids": doc.get("refseq_accession"),
@@ -211,7 +270,8 @@ class Gene(object):
             return id_dict
         else:
             raise Exception("No gene returned by HGNC fetch on "
-                "symbol {}.".format(symbol))
+                "{field} {query}.".format(field=field, query=query))
+
 
 
 class Transcript(object):
