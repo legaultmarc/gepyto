@@ -69,7 +69,7 @@ def ensembl_variants_in_region(region, build=BUILD):
             # We ignore the id if it's not from dbSNP.
             rs = None
 
-        if variant["alt_alleles"] < 2:
+        if len(variant["alt_alleles"]) < 2:
             # Weirdly, we have less than two alleles.
             logging.warning("{} has only one allele (ignored).".format(rs))
             continue
