@@ -73,10 +73,12 @@ class Gene(object):
             "exons": list,
         }
 
-        _ALL_PARAMS = dict(_PARAMETERS.items() + _OPTIONAL_PARAMETERS.items())
+        _ALL_PARAMS = dict(
+            list(_PARAMETERS.items()) + list(_OPTIONAL_PARAMETERS.items())
+        )
 
         # Store the passed parameters.
-        for arg, val in kwargs.iteritems():
+        for arg, val in kwargs.items():
             if arg not in _ALL_PARAMS:
                 raise Exception("Unknown parameter {}.".format(arg))
             setattr(self, arg, _ALL_PARAMS[arg](val))
@@ -174,7 +176,7 @@ class Gene(object):
 
         req = Request(url.format(symbol), headers=headers)
         with contextlib.closing(urlopen(req)) as stream:
-            res = json.load(stream)
+            res = json.loads(stream.read().decode())
 
         # We take the top search hit and run a fetch.
         if res["response"]["numFound"] > 0:
@@ -189,7 +191,7 @@ class Gene(object):
         url = "http://rest.genenames.org/fetch/symbol/{}"
         req = Request(url.format(symbol), headers=headers)
         with contextlib.closing(urlopen(req)) as stream:
-            res = json.load(stream)       
+            res = json.loads(stream.read().decode())
 
         # Parse the cross references.
         if res["response"]["numFound"] > 0:
@@ -204,7 +206,7 @@ class Gene(object):
                 "uniprot_ids": doc.get("uniprot_ids"),
                 "ucsc_id": doc.get("ucsc_id"),
             }
-            id_dict = {k: str(v) for (k, v) in id_dict.iteritems()}
+            id_dict = {k: str(v) for (k, v) in id_dict.items()}
 
             return id_dict
         else:
@@ -248,10 +250,12 @@ class Transcript(object):
             "biotype": str,
         }
 
-        _ALL_PARAMS = dict(_PARAMETERS.items() + _OPTIONAL_PARAMETERS.items())
+        _ALL_PARAMS = dict(
+            list(_PARAMETERS.items()) + list(_OPTIONAL_PARAMETERS.items())
+        )
 
         # Store the passed parameters.
-        for arg, val in kwargs.iteritems():
+        for arg, val in kwargs.items():
             if arg not in _ALL_PARAMS:
                 raise Exception("Unknown parameter {}.".format(arg))
             setattr(self, arg, _ALL_PARAMS[arg](val))
