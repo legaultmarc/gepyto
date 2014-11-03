@@ -15,8 +15,6 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-# TODO: CLEAN UP IMPORT
-
 import logging
 
 from ..settings import BUILD
