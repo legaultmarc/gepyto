@@ -10,15 +10,18 @@
 # http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
+
 __author__ = "Marc-Andre Legault"
 __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
                  "Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
+
 import contextlib
 import json
 import logging
 import time
+
 
 try:
     # Python 2 support
@@ -49,13 +52,13 @@ def query_ensembl(url):
 
     try:
         with contextlib.closing(urlopen(url)) as stream:
-            response = json.load(stream)
+            response = json.loads(stream.read().decode())
             response_info = stream.info()
 
-            limit = int(response_info.getheader("X-RateLimit-Limit")) # Allowed / h
-            reset = int(response_info.getheader("X-RateLimit-Reset")) # Time to reset
-            period = int(response_info.getheader("X-RateLimit-Period"))
-            remaining = int(response_info.getheader("X-RateLimit-Remaining"))
+            limit = int(response_info["X-RateLimit-Limit"]) # Allowed / h
+            reset = int(response_info["X-RateLimit-Reset"]) # Time to reset
+            period = int(response_info["X-RateLimit-Period"])
+            remaining = int(response_info["X-RateLimit-Remaining"])
 
             # Max time for request (s / request) to not exceed quota:
             max_t = 1.0 * reset / remaining
