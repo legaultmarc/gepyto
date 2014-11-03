@@ -33,7 +33,8 @@ def ensembl_variants_in_region(region, build=BUILD):
     :param build: The genome build to use (GRCh37 or GRCh38).
     :type build: str
 
-    :returns: A list of :class:`data_structures.SNP`.
+    :returns: A list of :py:class:`genometools.structures.variants.Variant`
+              or a subclass.
     :rtype: list
 
     """
