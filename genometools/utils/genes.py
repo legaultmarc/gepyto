@@ -61,7 +61,7 @@ def ensembl_genes_in_region(region, build=BUILD):
         assert gene["assembly_name"] == build
 
         # Building the gene
-        g_obj = Gene.factory_symbol(gene["external_name"], build=build)
+        g_obj = Gene.factory_ensembl_id(gene["id"], build=build)
 
         genes.append(g_obj)
 

@@ -123,11 +123,11 @@ class Gene(object):
                     symbol 
                 ))
 
-        return Gene.factory_id(ensembl_id, xrefs=xrefs, build=build)
+        return Gene.factory_ensembl_id(ensembl_id, xrefs=xrefs, build=build)
 
 
     @classmethod
-    def factory_id(cls, ensembl_id, xrefs=None, build=settings.BUILD):
+    def factory_ensembl_id(cls, ensembl_id, xrefs=None, build=settings.BUILD):
         """Builds a gene object from it's Ensembl ID.
 
         :param ensembl_id: The Ensembl ID.
