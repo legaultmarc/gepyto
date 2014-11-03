@@ -21,6 +21,7 @@ __status__ = "Development"
 import unittest.main
 
 from . import structures
+from . import annotation
 from . import utils
 from . import db
 
