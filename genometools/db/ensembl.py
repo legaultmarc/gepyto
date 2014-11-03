@@ -22,7 +22,6 @@ import json
 import logging
 import time
 
-
 try:
     # Python 2 support
     from urllib2 import urlopen, HTTPError
