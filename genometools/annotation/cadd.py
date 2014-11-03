@@ -6,13 +6,14 @@
 # http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
+
 __author__ = "Marc-Andre Legault"
 __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
                  "Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
+
 import re
-import urllib2
 import time
 import uuid
 import os
@@ -21,6 +22,7 @@ import gzip
 import requests # Install http://docs.python-requests.org/en/latest/
 
 from .. import structures as struct
+
 
 __all__ = ["cadd", ]
 
@@ -104,8 +106,8 @@ def cadd_score(variants):
             return variants
 
         else:
-            print m
-            print feedback
+            print(m)
+            print(feedback)
             raise Exception("Could not find download link in CADD Response.")
 
     else:
