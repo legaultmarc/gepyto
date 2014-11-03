@@ -34,6 +34,7 @@ from ..db.appris import get_category_for_transcript
 
 __all__ = ["Gene", ]
 
+
 class Gene(object):
     def __init__(self, **kwargs):
         """Python object representing a gene.
@@ -100,6 +101,7 @@ class Gene(object):
             self.start,
             self.end
         )
+
 
     @classmethod
     def factory_symbol(cls, symbol, build=settings.BUILD):
@@ -273,7 +275,6 @@ class Gene(object):
                 "{field} {query}.".format(field=field, query=query))
 
 
-
 class Transcript(object):
     def __init__(self, **kwargs):
         """Python object representing a transcript.
@@ -330,6 +331,7 @@ class Transcript(object):
         assert re.match(r"([0-9]{1,2}|MT|X|Y)", self.chrom)
         assert self.start < self.end
         assert re.match(r"^ENST[0-9]+$", self.enst)
+
 
     @classmethod
     def factory_position(cls, region, build=settings.BUILD):
