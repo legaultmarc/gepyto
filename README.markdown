@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/genometools/badge/?version=latest)](https://readthedocs.org/projects/genometools/?badge=latest)
+
 # Introduction
 
 This is a small module that contains reusable code. I aim to use it as a 
