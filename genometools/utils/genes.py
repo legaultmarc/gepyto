@@ -20,13 +20,17 @@ import logging
 from ..settings import BUILD
 from ..structures.genes import Gene
 from ..db.ensembl import query_ensembl
+from ..structures.genes import _parse_gene
 
 
-def ensembl_genes_in_region(region, build=BUILD):
+def ensembl_genes_in_region(region, bare=False, build=BUILD):
     """Queries a genome region of the form chr3:123-456 for genes using Ensembl API.
 
     :param region: The region to query.
     :type region: str
+
+    :param bare: If `True`, no information about transcript will be fetched
+    :type bare: boolean
 
     :param build: The genome build to use (GRCh37 or GRCh38).
     :type build: str
@@ -61,7 +65,16 @@ def ensembl_genes_in_region(region, build=BUILD):
         assert gene["assembly_name"] == build
 
         # Building the gene
-        g_obj = Gene.factory_ensembl_id(gene["id"], build=build)
+        g_obj = None
+        if not bare:
+            g_obj = Gene.factory_ensembl_id(gene["id"], build=build)
+
+        else:
+            # Only the gene information is required
+            gene_info = _parse_gene(gene)
+            gene_info["symbol"] = gene["external_name"]
+            gene_info["xrefs"] = {"ensembl_gene_id": gene["id"]}
+            g_obj = Gene(**gene_info)
 
         genes.append(g_obj)
 
