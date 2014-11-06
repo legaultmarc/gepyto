@@ -22,7 +22,7 @@ import gzip
 from .. import structures as struct
 
 
-__all__ = ["cadd_score", "_parse_annotation"]
+__all__ = ["cadd_score", ]
 
 def cadd_score(variants):
     """Annotate the variants using CADD (cadd.gs.washington.edu).
@@ -30,8 +30,15 @@ def cadd_score(variants):
     :param vcf: A list of Variant (or subclass) objects.
     :type vcf: :py:class:`genometools.structures.variants.Variant`
 
-    :returns: A list of annotations as described by :py:func:`_parse_annotation`.
+    :returns: A list of annotations.
     :rtype: list
+
+    The format for the annotations is a list of tuples of the form
+    (``Transript``, ``Variant``, ``C score``, ``info``). If the annotation is
+    for an Ensembl regulatory feature, the ID (ENSR) replaces the 
+    :py:class:`genometools.structures.genes.Transcript` object.
+
+    The info dictionary contains extra annotations from the CADD output.
 
     """
 
