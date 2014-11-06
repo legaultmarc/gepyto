@@ -67,14 +67,16 @@ class Gene(object):
             "chrom": str,
             "start": int,
             "end": int,
+            "strand": int,
             "xrefs": dict,
-            "transcripts": list,
         }
 
         _OPTIONAL_PARAMETERS = {
             "symbol": str,
             "desc": str,
+            "transcripts": list,
             "exons": list,
+            "biotype": str,
         }
 
         _ALL_PARAMS = dict(
@@ -438,6 +440,8 @@ def _parse_gene(o):
         "chrom": o.get("seq_region_name"),
         "start": o.get("start"),
         "end": o.get("end"),
+        "strand": o.get("strand"),
+        "biotype": o.get("biotype"),
     }
 
     return d
