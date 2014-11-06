@@ -180,6 +180,8 @@ class Indel(Variant):
 
         self.start = int(self.start)
         self.end = int(self.end)
+        self.ref = self.ref.upper()
+        self.alt = self.alt.upper()
         try:
             assert re.match(r"([0-9]{1,2}|MT|X|Y)", str(self.chrom))
             assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)

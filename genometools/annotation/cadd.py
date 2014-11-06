@@ -79,11 +79,11 @@ def cadd_score(variants):
         # Get the link
         m = re.search(r"href=\".+/(.+\.tsv\.gz)\"", feedback)
         if m:
-            fn = m.group(1)
+            dld_fn = m.group(1)
 
             # Retry to download every 5 minutes.
             download_url = "http://cadd.gs.washington.edu/static/finished/{}"
-            download_url = download_url.format(fn)
+            download_url = download_url.format(dld_fn)
             success = False
             for i in xrange(24): # Try, wait for 5 minutes, retry.
                 time.sleep(5 * 60)
