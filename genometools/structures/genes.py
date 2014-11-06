@@ -33,7 +33,7 @@ from ..db import query_ensembl
 from ..db.appris import get_category_for_transcript
 
 
-__all__ = ["Gene", ]
+__all__ = ["Gene", "Transcript"]
 
 
 class Gene(object):
