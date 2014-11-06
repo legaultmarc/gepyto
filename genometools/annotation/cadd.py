@@ -22,15 +22,15 @@ import gzip
 from .. import structures as struct
 
 
-__all__ = ["cadd_score", ]
+__all__ = ["cadd_score", "_parse_annotation"]
 
 def cadd_score(variants):
     """Annotate the variants using CADD (cadd.gs.washington.edu).
 
     :param vcf: A list of Variant (or subclass) objects.
-    :type vcf: :py:class`genometools.structures.variants.Variant`
+    :type vcf: :py:class:`genometools.structures.variants.Variant`
 
-    :returns: A list of annotations as described by :py:func:`parse_annotation`.
+    :returns: A list of annotations as described by :py:func:`_parse_annotation`.
     :rtype: list
 
     """
@@ -103,7 +103,7 @@ def cadd_score(variants):
 
             # Read the file and add the C Scores to a copy of the input file.
             with gzip.open(fn) as f:
-                annotations = parse_annotation(f)
+                annotations = _parse_annotation(f)
             os.remove(fn)
 
             return annotations
@@ -119,7 +119,7 @@ def cadd_score(variants):
         ))
 
 
-def parse_annotation(cadd_output):
+def _parse_annotation(cadd_output):
     """Takes a file object containing the output from CADD and parses it.
 
     :param cadd_output: An open file object representing the output from the 
