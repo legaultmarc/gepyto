@@ -41,13 +41,13 @@ __all__ = ["query_regulomedb", ]
 def query_regulomedb(query, build="GRCh37"):
     """Query RegulomeDB for a particular region.
 
-    :param region: The genomic region to query (hg19).
-    :type region: str or :py:class:`genometools.structures.variants.Variant`
+    :param query: The genomic region to query (hg19).
+    :type query: str or :py:class:`genometools.structures.variants.Variant`
 
     :param build: The genomic build (only GRCh37 is accepted by RegulomeDB).
-    :type region: str
+    :type build: str
 
-    :returns: Something for now...
+    :returns: A list of annotation for the region or variant.
     :rtype: list
 
     The ``query`` might be either a genomic region (0-based) or a variant object
@@ -110,14 +110,10 @@ def query_regulomedb(query, build="GRCh37"):
 def _parse_regulomedb(regulome_output):
     """Takes a file object containing the output from CADD and parses it.
 
-    :param regulome_output: An stream representing the output from the the
-                            RegulomeDB.
-    :type regulome_output: A data steam
+    :param regulome_output: An stream representing the output from RegulomeDB.
+    :type regulome_output: str
 
-    :returns: A list of annotation tuples of the form (``Transript``, 
-              ``Variant``, ``C score``, ``info``). If the annotation is for 
-              an Ensembl regulatory feature, the ID (ENSR) replaces the
-              ``Transcript`` object.
+    :returns: A list representation of the RegulomeDB output.
     :rtype: list
 
     """
