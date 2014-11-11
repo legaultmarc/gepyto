@@ -22,3 +22,10 @@ submodule for other projects.
 - Annotation module.
 - Get all genes from region in Ensembl DB (utils).
 
+# Demos
+
+This project will use IPython notebooks for feature demonstrations. For now, 
+there is one that can be viewed on [NBViewer](http://nbviewer.ipython.org/github/legaultmarc/genometools/blob/master/demos/Variant%20Annotation.ipynb) or from the `demos` 
+directory. It demonstrates how this module can be used to fetch information 
+about genes and variants and how to annotate the latter.
+
