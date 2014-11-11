@@ -80,3 +80,18 @@ def query_ensembl(url):
 
     return response
 
+
+def mysql_connect(ensembl_version, build):
+    import MySQLdb
+
+    if build == "GRCh37":
+        build = "37"
+    elif build == "GRCh38":
+        build = "38"
+
+    core_db_name = "homo_sapiens_core_{ensver}_{build}".format(
+        ensver=ensembl_version,
+        build=build,
+    )
+
+

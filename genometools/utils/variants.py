@@ -74,7 +74,7 @@ def ensembl_variants_in_region(region, build=BUILD):
 
         if len(variant["alt_alleles"]) < 2:
             # Weirdly, we have less than two alleles.
-            logging.warning("{} has only one allele (ignored).".format(rs))
+            logging.warning("RS: {} has only one allele (ignored).".format(rs))
             continue
 
         ref = str(variant["alt_alleles"][0])

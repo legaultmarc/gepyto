@@ -209,11 +209,16 @@ class Indel(Variant):
             traceback.print_tb(sys.exc_info()[2])
             raise e
 
-    def get_position(self):
+    def get_position(self, zero_based=False):
         """Returns an indel in the standard chrXX:START-END notation. 
         
+        :param zero_based: Indicates if zero based coordinates should be used.
+                           This is False by default (1 based coordinates).
+
         """
-        return "chr{}:{}-{}".format(self.chrom, self.start, self.end)
+        start = self.start - 1 if zero_based else self.start
+        end = self.end - 1 if zero_based else self.end
+        return "chr{}:{}-{}".format(self.chrom, start, end)
 
     def vcf_line(self):
         """Returns a line describing the current variant as expected by the VCF format. 
@@ -302,11 +307,15 @@ class SNP(Variant):
             traceback.print_tb(sys.exc_info()[2])
             raise e
 
-    def get_position(self):
+    def get_position(self, zero_based=False):
         """Returns a variant in the standard chrXX:pos notation.
+
+        :param zero_based: Indicates if zero based coordinates should be used.
+                           This is False by default (1 based coordinates).
         
         """
-        return "chr{}:{}".format(self.chrom, self.pos)
+        pos = self.pos - 1 if zero_based else self.pos
+        return "chr{}:{}".format(self.chrom, pos)
 
     def vcf_line(self):
         """Returns a line describing the current variant as expected by the VCF format. 
