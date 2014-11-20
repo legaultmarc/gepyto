@@ -45,7 +45,7 @@ to report problems with the installation.
 You could use the _"For users"_ instructions, but if you will be changing
 things it will be easier to simply add the package to your python path.
 
-1. ``git clone https://github.com/legaultmarc/genometools.git``
+1. ``git clone git@github.com:legaultmarc/genometools.git``
 2. Find the absolute path to the _genometools_ root directory and add it to your
    path by using ``export PYTHONPATH="${PYTHONPATH}:your_absolute_path"``.
 
@@ -55,6 +55,14 @@ equivalent.
 
 It is also still a good idea to run ``python setup.py test`` to make sure the
 tests pass.
+
+A script automating the previously described steps would look like this:
+
+```shell
+git clone git@github.com:legaultmarc/genometools.git
+gtpath=$(find $(pwd) -name genometools -maxdepth 1)
+echo 'export PYTHONPATH="${PYTHONPATH}:'${gtpath}'"' >> ~/.bash_profile
+```
 
 # WIP
 
