@@ -14,4 +14,5 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 from .ensembl import *
 from .appris import *
+from .index import *
 

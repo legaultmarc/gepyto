@@ -74,8 +74,8 @@ Note that this will work on most Linux and Mac OS versions.
 
 # WIP
 
-[ ] Checking of reference alleles for Variants using a provided genome reference.
-[ ] Visualisation module.
+* Checking of reference alleles for Variants using a provided genome reference.
+* Visualisation module.
 
 # Demos
 
