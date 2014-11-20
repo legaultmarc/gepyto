@@ -40,12 +40,16 @@ python setup.py test
 Note that the test coverage is fairly low for now. Don't hesitate to contact us
 to report problems with the installation.
 
+<a name="devs_install">
 ## For developers
 
-You could use the _"For users"_ instructions, but if you will be changing
-things it will be easier to simply add the package to your python path.
+See also: [Instructions for contributors](CONTRIBUTING.markdown).
 
-1. ``git clone git@github.com:legaultmarc/genometools.git``
+You could use the _"For users"_ instructions, but if you will be changing
+things it will be easier to simply add the package to your python path. To
+do this, fork the repository, clone it and add it to your `PYTHONPATH`.
+
+1. ``git clone git@github.com:your_user/genometools.git``
 2. Find the absolute path to the _genometools_ root directory and add it to your
    path by using ``export PYTHONPATH="${PYTHONPATH}:your_absolute_path"``.
 
@@ -59,18 +63,19 @@ tests pass.
 A script automating the previously described steps would look like this:
 
 ```shell
-git clone git@github.com:legaultmarc/genometools.git
+git clone git@github.com:your_user/genometools.git
 gtpath=$(find $PWD -maxdepth 1 -name genometools)
 echo 'export PYTHONPATH="${PYTHONPATH}:'${gtpath}'"' >> ~/.bash_profile
 ```
+
+Don't forget to change `your_user` with your Github username.
 
 Note that this will work on most Linux and Mac OS versions.
 
 # WIP
 
-- Checking of reference alleles for Variants using a provided genome reference.
-- Annotation module.
-- Get all genes from region in Ensembl DB (utils).
+[ ] Checking of reference alleles for Variants using a provided genome reference.
+[ ] Visualisation module.
 
 # Demos
 
