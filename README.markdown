@@ -64,6 +64,8 @@ gtpath=$(find $PWD -maxdepth 1 -name genometools)
 echo 'export PYTHONPATH="${PYTHONPATH}:'${gtpath}'"' >> ~/.bash_profile
 ```
 
+Note that this will work on most Linux and Mac OS versions.
+
 # WIP
 
 - Checking of reference alleles for Variants using a provided genome reference.
