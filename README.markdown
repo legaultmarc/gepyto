@@ -60,7 +60,7 @@ A script automating the previously described steps would look like this:
 
 ```shell
 git clone git@github.com:legaultmarc/genometools.git
-gtpath=$(find $(pwd) -name genometools -maxdepth 1)
+gtpath=$(find $PWD -maxdepth 1 -name genometools)
 echo 'export PYTHONPATH="${PYTHONPATH}:'${gtpath}'"' >> ~/.bash_profile
 ```
 
