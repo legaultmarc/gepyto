@@ -29,7 +29,7 @@ class TestIndex(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.fn = ".test_index_genometools.txt"
-        cls.f = open(cls.fn, "wb")
+        cls.f = open(cls.fn, "w")
         
         cls.positions = [(1, 1), (1, 11), (1, 123), (2, 1), (2, 11), (2, 11), 
             (2, 11), (2, 11), (2, 21), (2, 34), (3, 1), (3, 2), (3, 3), (3, 4),
@@ -40,12 +40,12 @@ class TestIndex(unittest.TestCase):
             # Generate a random third column.
             n = random.randint(100, 125)
             s = "".join(
-                [random.choice(string.ascii_lowercase) for i in xrange(n)]
+                [random.choice(string.ascii_lowercase) for i in range(n)]
             )
             cls.f.write("\t".join((str(chrom), str(pos), s)) + "\n")
 
         cls.f.close()
-        cls.f = open(cls.fn, "rb")
+        cls.f = open(cls.fn, "r")
 
     @classmethod
     def tearDownClass(cls):

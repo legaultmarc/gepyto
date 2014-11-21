@@ -16,12 +16,14 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import logging
 import re
-import cPickle
 import os
 import bisect
+try:
+    import cPickle
+except ImportError:
+    import pickle as cPickle
 
 import numpy as np
-
 
 def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
                 index_rate=0.2):
@@ -65,9 +67,9 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
     
     size = os.path.getsize(fn) # Total filesize
     start = 0 # Byte position of the meat of the file (data).
-    with open(fn) as f:
+    with open(fn, "r") as f:
         if skip_lines > 0:
-            for i in xrange(skip_lines):
+            for i in range(skip_lines):
                 # Skip header lines if needed.
                 _ = f.readline()
 
@@ -78,7 +80,7 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         # Estimate the line length using first 100 lines
         line_length = np.empty((100))
         prev = start
-        for i in xrange(100):
+        for i in range(100):
             _ = f.readline()
             line_length[i] = f.tell() - prev
             prev = f.tell()
@@ -181,7 +183,7 @@ def get_index(fn):
 
     """
 
-    with open(_get_index_fn(fn)) as f:
+    with open(_get_index_fn(fn), "rb") as f:
         idx = cPickle.load(f)
     return idx
 
@@ -316,5 +318,4 @@ def _get_index_fn(fn):
         ))
 
     return os.path.abspath("{}.gtidx".format(fn))
-
 
