@@ -26,7 +26,7 @@ except ImportError:
 import numpy as np
 
 def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
-                index_rate=0.2):
+                index_rate=0.2, ignore_startswith=None):
     """Build a index for the given file.
 
     :param fn: The filename
@@ -48,6 +48,11 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
                        a file with 1000 lines and the default index_rate of 
                        0.2 will have an index with ~200 entries.
     :type index_rate: float
+    
+    :param ignore_startswith: Ignore lines that start with a given string.
+                              This can be used to skip headers, but will not
+                              be used to parse the rest of the file.
+    :type ignore_startswith: str
 
     :returns: The index dict.
     :rtype: dict
@@ -73,6 +78,16 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
                 # Skip header lines if needed.
                 _ = f.readline()
 
+        cur = f.tell()
+        if ignore_startswith is not None:
+            line = f.readline()
+            while line.startswith(ignore_startswith):
+                cur = f.tell()
+                line = f.readline()
+            f.seek(cur)
+
+            
+
         start = f.tell()
 
         size -= start # Adjust file size to remove header.
@@ -92,8 +107,9 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         f.seek(start)
 
         # Add the first line to the index.
-        l1 = f.readline().lstrip().split(delimiter)
+        l1 = f.readline().rstrip().split(delimiter)
         chrom1, pos1 = (l1[chrom_col], l1[pos_col])
+        chrom1 = chrom1.lstrip("chr")
         pos1 = int(pos1)
         idx[chrom1] = [(pos1, start), ]
         f.seek(start)
@@ -129,6 +145,9 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
 
             chrom1, pos1 = (l1[chrom_col], l1[pos_col])
             chrom2, pos2 = (l2[chrom_col], l2[pos_col])
+
+            chrom1 = chrom1.lstrip("chr")
+            chrom2 = chrom2.lstrip("chr")
 
             pos1 = int(pos1)
             pos2 = int(pos2)
@@ -188,7 +207,7 @@ def get_index(fn):
     return idx
 
 
-def goto(f, idx, chrom, pos, ):
+def goto(f, idx, chrom, pos):
     """Given a file and an index, go to the genomic coordinates.
 
     :param f: An open file.
@@ -210,6 +229,7 @@ def goto(f, idx, chrom, pos, ):
 
     # Those are the types used by the indexing structure.
     chrom = str(chrom)
+    chrom = chrom.lstrip("chr")
     num_chrom = None
     if re.match(r"^[0-9]+$", chrom):
         num_chrom = int(chrom)
@@ -264,10 +284,9 @@ def goto(f, idx, chrom, pos, ):
             # This is a non numeric chromosome.
             # Find the last numeric chromosome and look after.
             last_num_chrom = None
-            keys = sorted(idx.keys())
-            for k in keys:
-                if re.match(r"^[0-9]+$", k):
-                    last_num_chrom = k
+            pat = r"^[0-9]+$"
+            keys = sorted([int(i) for i in idx.keys() if re.match(pat, i)])
+            last_num_chrom = str(keys[-1])
             # Set the tell to the last index of this chromosome.
             tell = idx[last_num_chrom][-1][1]
     else:
@@ -284,6 +303,8 @@ def goto(f, idx, chrom, pos, ):
             return False
 
         this_chrom = line[chrom_col]
+        this_chrom = this_chrom.lstrip("chr")
+
         if re.match(r"^[0-9]+$", this_chrom):
             num_this_chrom = int(this_chrom)
         else:

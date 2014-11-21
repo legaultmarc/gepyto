@@ -31,9 +31,9 @@ class TestIndex(unittest.TestCase):
         cls.fn = ".test_index_genometools.txt"
         cls.f = open(cls.fn, "w")
         
-        cls.positions = [(1, 1), (1, 11), (1, 123), (2, 1), (2, 11), (2, 11), 
+        cls.positions = [("chr1", 1), (1, 11), (1, 123), (2, 1), (2, 11), (2, 11), 
             (2, 11), (2, 11), (2, 21), (2, 34), (3, 1), (3, 2), (3, 3), (3, 4),
-            (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9), (4, 1), (5, 2), 
+            (3, 4), (3, 5), ("chr3", 6), (3, 7), (3, 8), (3, 9), (4, 1), (5, 2), 
             ("X", 3), ("Y", 2),
         ]
         for chrom, pos in cls.positions:
@@ -66,6 +66,7 @@ class TestIndex(unittest.TestCase):
 
                 # Check if the indexed chrom and pos are the same as in the file.
                 file_chrom, file_pos, _ = line.split("\t")
+                file_chrom = file_chrom.lstrip("chr")
                 file_pos = int(file_pos)
                 self.assertEqual(file_chrom, chrom)
                 self.assertEqual(file_pos, pos)
@@ -74,6 +75,8 @@ class TestIndex(unittest.TestCase):
         loci = TestIndex.positions
         random.shuffle(loci)
         for chrom, pos in loci:
+            if type(chrom) is str:
+                chrom = chrom.lstrip("chr")
             # Search the entry.
             self.assertTrue(
                 db.index.goto(TestIndex.f, self.idx_info, chrom, pos)
