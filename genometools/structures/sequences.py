@@ -17,6 +17,8 @@ __all__ = ["Sequence", ]
 
 import textwrap
 
+import numpy as np
+
 class Sequence(object):
     """Object to represent biological sequences.
 
@@ -50,7 +52,7 @@ class Sequence(object):
                 "{}".format(seq_type, list(Sequence.types)))
 
         self.uid = uid
-        self.seq = s
+        self.seq = s.lower()
         self.seq_type = seq_type
         self.info = info
 
@@ -80,4 +82,76 @@ class Sequence(object):
             )
         s = [s, ] + textwrap.wrap(self.seq, line_len)
         return "\n".join(s) + "\n"
+
+    def bbc(self, k=10, alphabet=None):
+        """Shortcut to base_base_correlation.
+
+        """
+        return self.base_base_correlation(k, alphabet)
+
+    def base_base_correlation(self, k=10, alphabet=None):
+        """Compute the base base correlation (BBC) for the sequence.
+
+        :param k: k is a parameter of the BBC. Intuitively, it represents
+                  the maximum distance to observe correlation between bases.
+        :type k: int
+
+        :param alphabet: List of possible characters. This can be used to avoid
+                         autodetection of the alphabet in the case where
+                         sequences with missing letters are to be compared.
+        :type alphabet: iterable
+
+        :returns: A 16 dimensional vector representing the BBC.
+        :rtype: :py:class:`np.ndarray`
+
+        A description of the method can be found here:
+        http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4272582
+
+        Liu, Zhi-Hua, et al. "Base-Base Correlation a Novel Sequence Feature
+        and its Applications." Bioinformatics and Biomedical Engineering, 2007.
+        ICBBE 2007. The 1st International Conference on. IEEE, 2007.
+
+        This for is generalized for any sequence type.
+
+        """
+
+        s = self.seq
+
+        if alphabet is None:
+            alphabet = set(s)
+        alphabet = sorted(list(alphabet))
+        alphabet = dict(zip(alphabet, range(len(alphabet))))
+        L = len(alphabet)
+
+        # Compute the base probabilities for every character.
+        p = np.zeros(L)
+        for c in s:
+            p[alphabet[c]] += 1
+        p /= np.sum(p)
+        p.shape = (1, L)
+
+        # Now we need to compute 
+        bbc = np.zeros((L, L))
+        for l in xrange(k):
+            # We need to compute $p_{ij}(l)$ representing the probability of
+            # observing the bases i and j separated by l "gaps".
+            # We will compute it for all 16 combinations of alleles.
+            l_dist_correlations = np.zeros((L, L))
+            for i in xrange(len(s) - 1 - l):
+                nuc1 = alphabet[s[i]]
+                nuc2 = alphabet[s[i + l]]
+                l_dist_correlations[nuc1][nuc2] += 1
+            l_dist_correlations /= np.sum(l_dist_correlations)
+
+            # We can now compute the D_{ij}(l) which is the deviation from
+            # statistical independance.
+            # $D_{ij}(l) = p_{ij}(l) - p_i p_j$
+            D = l_dist_correlations - np.dot(p.T, p)
+
+            bbc += D + (D ** 2 / 2 * np.dot(p.T ** 2, p ** 2)) + D ** 3
+
+        # We can now flatten the bbc into a 16 feature vector.
+        bbc.shape = (1, L * L)
+
+        return bbc
 
