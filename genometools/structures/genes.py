@@ -31,6 +31,7 @@ except ImportError:
 from .. import settings
 from ..db import query_ensembl
 from ..db.appris import get_category_for_transcript
+from . import sequences
 
 
 __all__ = ["Gene", "Transcript"]
@@ -120,6 +121,72 @@ class Gene(object):
             self.end
         )
 
+    def get_ortholog_sequences(self):
+        """Queries Ensembl to get Sequence objects representing orthologs.
+
+        :returns: A list of :py:class:`genometools.structures.sequences.Sequence`
+        :rtype: list
+
+        """
+        return self._homology("orthologs")
+
+    def get_paralog_sequences(self):
+        """Queries Ensembl to get Sequence objects representing paralogs.
+
+        :returns: A list of :py:class:`genometools.structures.sequences.Sequence`
+        :rtype: list
+
+        """
+        return self._homology("paralogs")
+
+    def _homology(self, homo_type="orthologs"):
+        """Retrieve homology information from Ensembl.
+
+        :param homo_type: The type of homologuous sequence to query. Can be 
+                          either 'orthologs' or 'paralogs'.
+        :type homo_type: str
+
+        """
+
+        homo_types = {
+            "orthologs": "orthologues",
+            "paralogs": "paralogues"
+        }
+        if homo_type not in homo_types.keys():
+            raise Exception("Invalid homology type. Valid parameters are: "
+                "{}".foramt(homo_types.keys()))
+
+        if "ensembl_id" not in self.xrefs:
+            raise Exception("Can't retrieve homology information from Ensembl "
+                "without an 'ensembl_id' in the cross references (xrefs).")
+
+        url = ("http://rest.ensembl.org/homology/id/{}?"
+               "content-type=application/json&"
+               "type={}")
+        url = url.format(self.xrefs["ensembl_id"], homo_types[homo_type])
+
+        res = query_ensembl(url)
+
+        homolog_sequences = []
+        for hit in res["data"][0]["homologies"]:
+            hit = hit["target"]
+
+            seq_id = hit["protein_id"]
+            seq = hit["align_seq"]
+
+            seq_obj = sequences.Sequence(
+                seq_id,
+                "".join([c for c in seq if c != '-']),
+                "AA",
+                {
+                    "species": hit["species"],
+                    "species_ncbi_tax_id": hit["taxon_id"],
+                    "perc_id": hit["perc_id"]
+                }
+            )
+            homolog_sequences.append(seq_obj)
+
+        return homolog_sequences
 
     @classmethod
     def factory_symbol(cls, symbol, build=settings.BUILD):
@@ -177,7 +244,11 @@ class Gene(object):
             if elem["feature_type"] == "gene" and elem["id"] == ensembl_id:
                 gene_info = _parse_gene(elem)
             elif elem["feature_type"] == "transcript":
-                transcripts.append(_parse_transcript(elem))
+                tr = _parse_transcript(elem)
+                # Sometimes, ensembl returns odd things that are unrelated,
+                # we filter here for those.
+                if tr.parent == ensembl_id:
+                    transcripts.append(tr)
             elif elem["feature_type"] == "exon":
                 exons.append(_parse_exon(elem))
 
@@ -379,8 +450,40 @@ class Transcript(object):
         assert self.build in ("GRCh37", "GRCh38")
         assert re.match(r"([0-9]{1,2}|MT|X|Y)", self.chrom)
         assert self.start < self.end
-        assert re.match(r"^ENST[0-9]+$", self.enst)
 
+    def get_sequence(self, seq_type="genomic"):
+        """Build a Sequence object representing the transcript.
+
+        :param seq_type: This can be either genomic, cds, cdna or protein.
+        :type seq_type: str
+
+        :returns: A Sequence object representing the feature.
+        :rtype: :py:class:`genometools.structures.sequences.Sequence`
+
+        """
+
+        # Get the sequence from Ensembl.
+        seq_types = ("genomic", "cds", "cdna", "protein")
+        if seq_type not in seq_types:
+            raise Exception("Invalid sequence type ({}). Known types are: "
+                "{}".format(", ".format(seq_types))
+            )
+
+        url = ("http://rest.ensembl.org/sequence/id/{}?"
+               "content-type=application/json&"
+               "type={}")
+        url = url.format(self.enst, seq_type)
+
+        res = query_ensembl(url)
+
+        # Build the Sequence.
+        seq = sequences.Sequence(
+            res["id"],
+            res["seq"],
+            "AA" if seq_type == "protein" else "DNA",
+        )
+
+        return seq
 
     @classmethod
     def factory_position(cls, region, build=settings.BUILD):
@@ -466,6 +569,7 @@ def _parse_transcript(o):
         "end": o.get("end"),
         "enst": o.get("id"),
         "biotype": o.get("biotype"),
+        "parent": o.get("Parent"),
     }
 
     # Get the APPRIS annotation.

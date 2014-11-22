@@ -132,12 +132,12 @@ class Sequence(object):
 
         # Now we need to compute 
         bbc = np.zeros((L, L))
-        for l in xrange(k):
+        for l in range(1, k + 1):
             # We need to compute $p_{ij}(l)$ representing the probability of
             # observing the bases i and j separated by l "gaps".
             # We will compute it for all 16 combinations of alleles.
             l_dist_correlations = np.zeros((L, L))
-            for i in xrange(len(s) - 1 - l):
+            for i in range(len(s) - 1 - l):
                 nuc1 = alphabet[s[i]]
                 nuc2 = alphabet[s[i + l]]
                 l_dist_correlations[nuc1][nuc2] += 1

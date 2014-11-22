@@ -24,6 +24,7 @@ from . import structures
 from . import annotation
 from . import utils
 from . import db
+from . import formats
 
 
 def test():
