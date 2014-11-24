@@ -4,17 +4,21 @@
 
 # Introduction
 
-This is a small module that contains reusable code. I aim to use it as a 
-submodule for other projects.
+The fundamental goal of ``genometools`` is to provide bioinformaticians with a
+set of tool to make script development faster. This means that most features
+are included in genometools because they provide an easier way to writing
+eloquent and descriptive Python code. As an example, fetching gene or variant
+information from public databases is abstracted away through extensible Python
+objects letting users focus on data manipulation rather than losing time
+writing code to handle HTTP requests and database queries. 
 
-# Features
+# Demos
 
-- Python objects for Variants including Indels and SNPs.
-- Python objects for Genes and Transcripts.
-- Abstraction of the APPRIS transcript annotation database.
-- Abstraction of the Ensembl API for variant queries in a range and from an rs
-  number.
-- Throttling for Ensembl database queries.
+This project will use IPython notebooks for feature demonstrations. They are
+available both in the `demos` directory or through nbviewer:
+
+- [Variant annotation](http://nbviewer.ipython.org/github/legaultmarc/genometools/blob/master/demos/Variant%20Annotation.ipynb)
+- [Sequence analysis](http://nbviewer.ipython.org/github/legaultmarc/genometools/blob/master/demos/Sequence%20analysis.ipynb)
 
 # Installation
 ## For users
@@ -76,11 +80,4 @@ Note that this will work on most Linux and Mac OS versions.
 
 * Checking of reference alleles for Variants using a provided genome reference.
 * Visualisation module.
-
-# Demos
-
-This project will use IPython notebooks for feature demonstrations. For now, 
-there is one that can be viewed on [NBViewer](http://nbviewer.ipython.org/github/legaultmarc/genometools/blob/master/demos/Variant%20Annotation.ipynb) or from the `demos` 
-directory. It demonstrates how this module can be used to fetch information 
-about genes and variants and how to annotate the latter.
 
