@@ -116,6 +116,9 @@ class Sequence(object):
         """
 
         s = self.seq
+        if k > len(s) - 2:
+            raise Exception("Sequence too short to compute BBC with "
+                "k={}".format(k))
 
         if alphabet is None:
             alphabet = set(s)
