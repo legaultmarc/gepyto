@@ -198,7 +198,7 @@ def get_index(fn):
     :type fn: str
  
     :returns: The index dictionary corresponding to the input file.
-    :rtype:
+    :rtype: dict
 
     """
 

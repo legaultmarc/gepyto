@@ -111,7 +111,7 @@ class Sequence(object):
         and its Applications." Bioinformatics and Biomedical Engineering, 2007.
         ICBBE 2007. The 1st International Conference on. IEEE, 2007.
 
-        This for is generalized for any sequence type.
+        This implementation is generalized for any sequence type.
 
         """
 
