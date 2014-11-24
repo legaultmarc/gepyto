@@ -5,12 +5,13 @@
 # Introduction
 
 The fundamental goal of ``genometools`` is to provide bioinformaticians with a
-set of tool to make script development faster. This means that most features
-are included in genometools because they provide an easier way to writing
-eloquent and descriptive Python code. As an example, fetching gene or variant
-information from public databases is abstracted away through extensible Python
-objects letting users focus on data manipulation rather than losing time
-writing code to handle HTTP requests and database queries. 
+set of tools to make script development faster. This means that most features
+are included in ``genometools`` because they provide a clear and eloquent way
+of expressing common genomics tasks through Python code. As an example,
+fetching gene or variant information from public databases is abstracted away
+through extensible Python objects letting users focus on data manipulation
+rather than losing time writing code to handle HTTP requests and database
+queries. 
 
 # Demos
 
@@ -79,5 +80,4 @@ Note that this will work on most Linux and Mac OS versions.
 # WIP
 
 * Checking of reference alleles for Variants using a provided genome reference.
-* Visualisation module.
 
