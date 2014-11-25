@@ -11,6 +11,30 @@ Github's very good
 [documentation](https://help.github.com/categories/collaborating/) on the 
 subject.
 
+## Quality
+
+To make sure to have a high quality package, we will only merge code that is
+thoroughly tested and documented. Documentation is achieved by using the
+``sphinx`` docstrings (See Coding guidelines section). After that, if you
+created a new module, add a _RestructuredText_ file in the ``docs`` folder by
+following the pattern of what is already in there. Basically, generating the
+documentation is as easy as:
+
+```
+.. automodule:: genometools.a_package.a_module
+    :members:
+```
+
+Writing good tests is also a prerequisite for merging. All the tests from the
+``genometools.tests`` directory will be automatically included in the build
+process. They can be invoked using the ``setup.py test`` command.
+
+We use the dafault Python ``unittest`` module. Reading the official
+documentation is probably the best way to understand how to write tests. You
+can also look at previously implemented _TestCase_s.
+
+Also note that the tests should pass on both Python 2.7 and Python 3.4.
+
 ## Coding guidelines
 
 We mostly follow the [Google Python Style Guide](https://google-styleguide.googlecode.com/svn/trunk/pyguide.html).
@@ -67,8 +91,4 @@ easy to use, small and modular so we can reuse it often accross projects.
 If you add nice things to the package, it would be a good idea to write 
 thorough tests, documentation and [IPython Notebook](http://ipython.org/notebook.html) 
 demonstrations in the ``demos`` directory.
-
-## Compatibility
-
-The code should run on both Python 2.7+ and 3.4+.
 

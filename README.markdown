@@ -77,7 +77,14 @@ Don't forget to change `your_user` with your Github username.
 
 Note that this will work on most Linux and Mac OS versions.
 
-# WIP
+# About
 
-* Checking of reference alleles for Variants using a provided genome reference.
+This project was intitated by a bioinformatician at the 
+[Beaulieu-Saucier Pharmacogenomics Center](http://www.pharmacogenomics.ca/) and 
+a student of the [StatGen](http://statgen.org/) lab.
+
+Both are located at the Montreal Heart Institute in Canada.
+
+![PGX Center Logo](https://raw.github.com/legaultmarc/genometools/master/docs/_static/logo_pgx.png)
+![StatGen Logo](https://raw.github.com/legaultmarc/genometools/master/docs/_static/logo_statgen.png)
 
