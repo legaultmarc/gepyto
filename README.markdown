@@ -85,6 +85,3 @@ a student of the [StatGen](http://statgen.org/) lab.
 
 Both are located at the Montreal Heart Institute in Canada.
 
-![PGX Center Logo](https://raw.github.com/legaultmarc/genometools/master/docs/_static/logo_pgx.png)
-![StatGen Logo](https://raw.github.com/legaultmarc/genometools/master/docs/_static/logo_statgen.png)
-
