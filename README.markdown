@@ -1,5 +1,4 @@
 [![Build Status](https://travis-ci.org/legaultmarc/genometools.svg?branch=master)](https://travis-ci.org/legaultmarc/genometools)
-
 [![Documentation Status](https://readthedocs.org/projects/genometools/badge/?version=latest)](https://readthedocs.org/projects/genometools/?badge=latest)
 
 # Introduction

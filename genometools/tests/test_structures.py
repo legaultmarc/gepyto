@@ -57,6 +57,25 @@ class TestVariant(unittest.TestCase):
     def test_indel_get_position(self):
         self.assertEqual(self.indel.get_position(), "chr19:55663540-55663542")
 
+    def test_variant_in(self):
+        snp_g_in = struct.genes.Gene(build="GRCh37", chrom="19", 
+            start=55653495, end=55673495, xrefs={}, strand=1, transcripts=[])
+
+        self.assertTrue(self.snp.in_gene(snp_g_in))
+        self.assertTrue(self.indel.in_gene(snp_g_in))
+
+        snp_g_out = struct.genes.Gene(build="GRCh37", chrom="19", 
+            start=15653495, end=15673495, xrefs={}, strand=1, transcripts=[])
+
+        self.assertFalse(self.snp.in_gene(snp_g_out))
+        self.assertFalse(self.indel.in_gene(snp_g_out))
+
+        snp_g_out2 = struct.genes.Gene(build="GRCh37", chrom="18", 
+            start=55653495, end=55673495, xrefs={}, strand=1, transcripts=[])
+
+        self.assertFalse(self.snp.in_gene(snp_g_out2))
+        self.assertFalse(self.indel.in_gene(snp_g_out2))
+
 
 class TestGene(unittest.TestCase):
     """Tests for the struct.genes module.

@@ -47,6 +47,7 @@ class Gene(object):
         - build: The genome build.
         - chrom: The chromosome.
         - start and end: The genomic positions for the gene.
+        - strand: The strand (either 1 or -1).
         - xrefs: A dict of id mappings to multiple databases.
         - transcripts: A list of Transcript objects.
 
@@ -88,7 +89,11 @@ class Gene(object):
         for arg, val in kwargs.items():
             if arg not in _ALL_PARAMS:
                 raise Exception("Unknown parameter {}.".format(arg))
-            setattr(self, arg, _ALL_PARAMS[arg](val))
+            try:
+                setattr(self, arg, _ALL_PARAMS[arg](val))
+            except TypeError:
+                raise TypeError("Invalid type for argument {}. Expected "
+                                "a {}.".format(arg, _ALL_PARAMS[arg]))
 
         # Check that all required arguments were passed.
         for p in _PARAMETERS:

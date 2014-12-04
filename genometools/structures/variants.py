@@ -23,6 +23,7 @@ import traceback
 
 from .. import settings
 from ..db import query_ensembl
+from . import genes
 
 
 __all__ = ["SNP", "Indel", "Variant"]
@@ -84,6 +85,40 @@ class Variant(object):
             "FILTER",
             "INFO",
         ])
+
+    def in_gene(self, gene):
+        """Method to test if the variant is in the gene.
+
+        :param: The gene object to test against.
+                By duck typing, this could be anything with a ``chrom``,
+                ``start`` and ``end``.
+
+        :returns: True is the variant is in the gene (region comparison).
+        :rtype: bool
+
+        """
+
+        if hasattr(self, "pos"):
+            start = self.pos
+        elif hasattr(self, "start"):
+            start = self.start
+        else:
+            raise NotImplementedError()
+
+        if hasattr(self, "end"):
+            end = self.end
+        elif hasattr(self, "pos"):
+            end = self.pos
+        else:
+            raise NotImplementedError()
+
+        chrom = self.chrom
+
+        ret = (str(chrom) == str(gene.chrom) and
+               int(start) > int(gene.start) and
+               int(end) < int(gene.end))
+
+        return ret
 
     def get_position(self):
         """Abstract method.

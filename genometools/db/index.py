@@ -275,6 +275,10 @@ def goto(f, idx, chrom, pos):
             # print a warning because it will probably be up top.
             elif num_chrom == 1:
                 tell = 0
+            # In some cases, we will have one chromosome index. We will just
+            # start from the beginning if we don't have better lookups.
+            elif chrom in idx and idx[chrom][0][0] >= pos:
+                tell = idx[chrom][0][1]
             else:
                 raise Exception("The observed index structure was not "
                     "anticipated, please report it (query: {}, {}).".format(
