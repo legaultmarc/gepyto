@@ -39,6 +39,8 @@ def cadd_score(variants):
     :py:class:`genometools.structures.genes.Transcript` object.
 
     The info dictionary contains extra annotations from the CADD output.
+    
+    The default version is v1.1.
 
     """
 
@@ -59,6 +61,7 @@ def cadd_score(variants):
 
     form = {
         "inclAnno": "Yes",
+        "version": "v1.1"
     }
 
     # Create a VCF file from the list of variants.
@@ -215,7 +218,7 @@ def _parse_annotation(cadd_output):
                     transcripts[feature_id] = tr
                     break
 
-        c = float(line[header["CSCORE"]])
+        c = float(line[header["PHRED"]])
         info = {
             "poly": line[header["POLYPHENCAT"]],
             "sift": line[header["SIFTCAT"]],
@@ -224,6 +227,10 @@ def _parse_annotation(cadd_output):
             "annotation_type": line[header["ANNOTYPE"]],
             "consequence": line[header["CONSEQUENCE"]],
         }
+        for k in info:
+            if info[k] == "NA":
+                info[k] = None
+
         annotations.append(
             (feature, v, c, info)
         )
