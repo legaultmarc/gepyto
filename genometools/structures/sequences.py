@@ -16,6 +16,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["Sequence", ]
 
 import textwrap
+import re
 
 import numpy as np
 
@@ -55,6 +56,7 @@ class Sequence(object):
         self.seq = s.lower()
         self.seq_type = seq_type
         self.info = info
+        self._annotations = []
 
     def __repr__(self):
         return "<Sequence: {}>".format(self.uid)
@@ -135,12 +137,12 @@ class Sequence(object):
 
         # Now we need to compute 
         bbc = np.zeros((L, L))
-        for l in range(1, k + 1):
+        for l in range(1, k + 2):
             # We need to compute $p_{ij}(l)$ representing the probability of
             # observing the bases i and j separated by l "gaps".
             # We will compute it for all 16 combinations of alleles.
             l_dist_correlations = np.zeros((L, L))
-            for i in range(len(s) - 1 - l):
+            for i in range(len(s) - l):
                 nuc1 = alphabet[s[i]]
                 nuc2 = alphabet[s[i + l]]
                 l_dist_correlations[nuc1][nuc2] += 1
@@ -157,4 +159,137 @@ class Sequence(object):
         bbc.shape = (1, L * L)
 
         return bbc
+
+
+class SequenceAnnotation(object):
+    """Annotation of a 1D sequence of characters. 
+
+    Examples of sequence annotations include DNA elements or protein domains.
+    These annotations will be supported by the ``visualisation`` module and
+    can also be used to generate automatic reports describing the consequence
+    of mutations.
+
+    """ 
+
+    _new_anno_int = -1
+    types = {}
+
+    def __init__(self, parent, anno_type, start, end, description=""):
+        # Initialize the default types if needed.
+        cls = self.__class__
+        if cls._new_anno_int == -1:
+            cls._init_types()
+
+        self.parent = parent
+        self.anno_type = anno_type 
+
+        self.start = int(start)
+        self.end = int(end)
+        if parent is not None:
+            assert start < parent.start and end < parent.end
+        assert start <= end
+
+        self.description = description
+
+    @classmethod
+    def _init_types(cls):
+        """Initialize the default types. 
+        
+        Internally, the annotation types are stored as integers. This binds
+        the default types to the class.
+
+        """
+
+        types = ("MODIFIED_RESIDUE", "BINDING_SITE", "CHAIN", "MOTIF",
+                 "HELIX", "STRAND")
+        for i, t in enumerate(types):
+            setattr(cls, t, i)
+            cls.types[i] = t
+
+        cls._new_anno_int = i + 1
+
+    @classmethod
+    def register_type(cls, type_name):
+        """Register a new annotation type.
+
+        :param type_name: The parameter is a name describing the new annotation
+                          name to use in your code. The naming convention is
+                          that you use CAPITALS_AND_UNDERSCORES.
+        :type type_name: str
+
+        After using this method, you can use SequenceAnnotation.MY_TYPE when
+        initializing new SequenceAnnotation objects.
+
+        """
+
+        if not re.match(r"^[A-Z0-9_]+$", type_name):
+            raise ValueError("Annotation type names need to follow the Python "
+                "global constant naming convention (e.g. BINDING_DOMAIN).")
+
+        if hasattr(cls, type_name):
+            raise ValueError("Can't register type '{}' as it already "
+                "exists.".format(type_name))
+
+        
+        setattr(cls, type_name, cls._new_anno_int)
+        cls.types[cls._new_anno_int] = type_name
+        cls._new_anno_int += 1
+
+    @classmethod
+    def unregister_type(cls, type_name):
+        """Remove a registered type.
+
+        :param type_name: The type to remove.
+        :type type_name: str
+
+        """
+
+        delattr(cls, type_name)
+
+    def __getattribute__(self, key):
+        """We override the attribute lookups to translate the types into their human readable form. 
+        
+        :param key: The field to lookup.
+        :type key: str
+
+        """
+
+        parentf = super(SequenceAnnotation, self).__getattribute__
+
+        if key == "anno_type":
+            return parentf("types")[parentf("anno_type")]
+        else:
+            return parentf(key)
+
+    def __setattr__(self, a, v):
+        """We override the attribute setting to be consistent with the getting.
+
+        :param a: The attribute to set.
+        :type a: str
+        :param b: The attribute value.
+        :type b: any
+
+        """
+
+        parentf = super(SequenceAnnotation, self).__setattr__
+
+        if a == "anno_type":
+            # Let getattr ici change en string.
+            try:
+                parentf("anno_type", getattr(self, v))
+            except AttributeError:
+                raise AttributeError("Unknown annotation type ('{}'). Register "
+                                     "it first using the `register_type` "
+                                     "method.".format(v))
+        else:
+            parentf(a, v)
+
+    def __repr__(self):
+        return "<{} ({}) {}-{}>".format(
+            self.__class__.__name__,
+            self.anno_type,
+            self.start,
+            self.end
+        )
+
 

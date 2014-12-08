@@ -126,6 +126,30 @@ class Gene(object):
             self.end
         )
 
+    def __contains__(self, o):
+        """Test if an object is in the gene.
+
+        This compares the chrom, start and end (or pos) attributes of the
+        given object with the gene.
+
+        You can use the syntax: `rs123 in gene`.
+        Where the `rs123` is a SNP object (or other) and `gene` is a `Gene` 
+        object.
+
+        """
+        if hasattr(o, "pos"):
+            start = end = int(o.pos)
+        elif hasattr(o, "start") and hasattr(o, "end"):
+            start, end = [int(i) for i in (o.start, o.end)]
+
+        if not hasattr(o, "chrom"):
+            raise TypeError("Testing overlap with gene requires a `chrom` "
+                "attribute.")
+
+        ret =  self.start < start and self.end > end
+        ret = ret and str(self.chrom) == str(o.chrom)
+        return ret
+
     def get_ortholog_sequences(self):
         """Queries Ensembl to get Sequence objects representing orthologs.
 
