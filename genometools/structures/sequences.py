@@ -85,6 +85,18 @@ class Sequence(object):
         s = [s, ] + textwrap.wrap(self.seq, line_len)
         return "\n".join(s) + "\n"
 
+    def get_annotations(self):
+        """Return a list of bound SequenceAnnotation objects.
+
+        :returns: A list of annotations for the sequence representing
+                  different kind of information about sub-sequences like
+                  protein domains.
+        :rtype: list
+
+        """
+
+        return self._annotations
+
     def bbc(self, k=10, alphabet=None):
         """Shortcut to base_base_correlation.
 
@@ -169,7 +181,11 @@ class SequenceAnnotation(object):
     can also be used to generate automatic reports describing the consequence
     of mutations.
 
-    """ 
+    TODO: We need to add a method for pickling. Actually, implementing the
+    __getstate__ and __setstate__ to handle the registered types should be
+    the thing to do.
+
+    """ # TODO
 
     _new_anno_int = -1
     types = {}
@@ -201,7 +217,9 @@ class SequenceAnnotation(object):
         """
 
         types = ("MODIFIED_RESIDUE", "BINDING_SITE", "CHAIN", "MOTIF",
-                 "HELIX", "STRAND")
+                 "HELIX", "STRAND", "REPEAT", "REGION_OF_INTEREST", 
+                 "SEQUENCE_VARIANT", "MUTAGENESIS_SITE", "TURN")
+
         for i, t in enumerate(types):
             setattr(cls, t, i)
             cls.types[i] = t
@@ -231,6 +249,10 @@ class SequenceAnnotation(object):
                 "exists.".format(type_name))
 
         
+        # Check if initial registration was done.
+        if cls._new_anno_int == -1:
+            cls._init_types()
+
         setattr(cls, type_name, cls._new_anno_int)
         cls.types[cls._new_anno_int] = type_name
         cls._new_anno_int += 1
