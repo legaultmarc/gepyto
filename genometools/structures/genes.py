@@ -390,7 +390,6 @@ class Gene(object):
                     "uniprot_ids": doc.get("uniprot_ids"),
                     "ucsc_id": doc.get("ucsc_id"),
                 }
-                id_dict = {k: str(v) for (k, v) in id_dict.items()}
 
                 return id_dict
             else:
