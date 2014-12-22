@@ -116,3 +116,37 @@ class TestGene(unittest.TestCase):
         self.assertTrue(len(self.gene_37.exons) > 1)
         self.assertTrue(len(self.gene_38.exons) > 1)
 
+
+class TestSequence(unittest.TestCase):
+    """Tests for the struct.sequences module.
+
+    """
+
+    def setUp(self):
+        self.dna = ("atggccaaggaaagatgcctgaaaaagtcctttcaagatagtcttgaagacataaag"
+                    "aagcgaatgaaagagaaaaggaataaaaacttggcagagattggcaaacgcaggtct"
+                    "tttatagctgcaccatgccaaataatcaccaacacttctacactgctgaaaaattac"
+                    "caagacaacaacaaaatgttagttttagctttggaaaatgaaaaatccaaagtgaaa"
+                    "gaagcccaagatatcatcctacagctgagaaaagaatgttactatctcacatgtcag"
+                    "ctatatgcattgaaaggaaaacttacatcacaacaaacagtagaacctgctcagaac"
+                    "caggaaatatgttcctctggaatggaccccaatagtgatgacagctccagaaattta"
+                    "tttgtgaaggatttaccgcaaattcctcttgaagaaactgaacttccaggacaagga"
+                    "gaatcatttcaaatagaagatcagatacctactattcctcaagacacactgggagtt"
+                    "gattttgattcaggtgaagctaagtctactgataatgtcttacctagaactgtatct"
+                    "gttcgtagcagtttaaagaaacattgttaa")
+
+        self.rna = self.dna.replace("t", "u")
+
+        self.protein = ("MAKERCLKKSFQDSLEDIKKRMKEKRNKNLAEIGKRRSFIAAPCQIITNTSTL"
+                        "LKNYQDNNKMLVLALENEKSKVKEAQDIILQLRKECYYLTCQLYALKGKLTSQ"
+                        "QTVEPAQNQEICSSGMDPNSDDSSRNLFVKDLPQIPLEETELPGQGESFQIED"
+                        "QIPTIPQDTLGVDFDSGEAKSTDNVLPRTVSVRSSLKKHC").lower()
+
+    def test_translation(self):
+        dna_seq = struct.sequences.Sequence("test_dna", self.dna, "DNA")
+        rna_seq = struct.sequences.Sequence("test_rna", self.rna, "RNA")
+        pro_seq = struct.sequences.Sequence("test_pro", self.protein, "AA")
+
+        self.assertEqual(dna_seq.translate().seq, pro_seq.seq)
+        self.assertEqual(rna_seq.translate().seq, pro_seq.seq)
+

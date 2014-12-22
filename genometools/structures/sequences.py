@@ -20,6 +20,22 @@ import re
 
 import numpy as np
 
+DNA_GENETIC_CODE = dict(
+    gct="a", gcc="a", gca="a", gcg="a",
+    cgt="r", cgc="r", cga="r", cgg="r", aga="r", agg="r",
+    aat="n", aac="n", gat="d", gac="d", tgt="c", tgc="c", caa="q", cag="q",
+    gaa="e", gag="e",
+    ggt="g", ggc="g", gga="g", ggg="g",
+    cat="h", cac="h", att="i", atc="i", ata="i",
+    tta="l", ttg="l", ctt="l", ctc="l", cta="l", ctg="l",
+    aaa="k", aag="k", atg="m", ttt="f", ttc="f",
+    cct="p", ccc="p", cca="p", ccg="p",
+    tct="s", tcc="s", tca="s", tcg="s", agt="s", agc="s",
+    act="t", acc="t", aca="t", acg="t",
+    tgg="w", tat="y", tac="y",
+    gtt="v", gtc="v", gta="v", gtg="v",
+)
+
 class Sequence(object):
     """Object to represent biological sequences.
 
@@ -96,6 +112,50 @@ class Sequence(object):
         """
 
         return self._annotations
+
+    def translate(self, no_check=False):
+        """Use the genetic code to translate a DNA or RNA sequence into an
+           amino acid sequence.
+
+        """
+
+        if self.seq_type not in ("DNA", "RNA"):
+            raise Exception("Can only translate DNA or RNA sequences.")
+
+        if self.seq_type == "RNA":
+            # We need to convert the genetic code to RNA.
+            code = {}
+            for k, v in DNA_GENETIC_CODE.iteritems():
+                k = k.replace("t", "u")
+                code[k] = v
+
+        else:
+            code = DNA_GENETIC_CODE
+
+        s = self.seq
+        if len(s) % 3 != 0:
+            raise Exception("Invalid sequence length for translation.")
+
+        if not no_check:
+            if s[:3] not in ("atg", "aug"):
+                raise Exception("Sequence does not start with START codon "
+                                "(ATG).")
+
+        if s[-3:] not in ("taa", "tag", "tga", "uaa", "uag", "uga"):
+            if not no_check:
+                raise Exception("Sequence does not end with STOP codon.")
+        else:
+            # Sequence ends with stop codon, we'll remove it for translation.
+            s = s[:-3]
+
+        return Sequence(
+            uid="translated_{}".format(self.uid),
+            seq_type="AA",
+            s="".join(
+                [code[s[i:i+3]] for i in xrange(0, len(s) - 2, 3)]
+            ),
+            info=self.info
+        )
 
     def bbc(self, k=10, alphabet=None):
         """Shortcut to base_base_correlation.
@@ -269,7 +329,8 @@ class SequenceAnnotation(object):
         delattr(cls, type_name)
 
     def __getattribute__(self, key):
-        """We override the attribute lookups to translate the types into their human readable form. 
+        """We override the attribute lookups to translate the types into their 
+           human readable form.
         
         :param key: The field to lookup.
         :type key: str
