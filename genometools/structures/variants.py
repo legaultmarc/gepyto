@@ -34,7 +34,7 @@ class Variant(object):
     """
 
     def __init__(self, *args, **kwargs):
-        """Super constructor for Variant objects. 
+        """Super constructor for Variant objects.
 
         It will initalize the object by assuming one of the following
         scenarios:
@@ -163,7 +163,7 @@ class Variant(object):
         pos = None
         for mapping in response["mappings"]:
             if mapping["assembly_name"] == build:
-                # This is a SNP 
+                # This is a SNP
                 if mapping["start"] == mapping["end"]:
                     pos = "chr{}_{}".format(
                         mapping["location"].split("-")[0],

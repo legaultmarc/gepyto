@@ -64,7 +64,7 @@ def plot_genes_in_region(figure, axe, region, build):
     # Adding the X limits
     axe.set_xlim(start, end)
 
-    # Getting the rendered
+    # Getting the renderer
     renderer = figure.canvas.get_renderer()
 
     # Adding genes one by one
