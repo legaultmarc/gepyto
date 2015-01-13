@@ -152,7 +152,7 @@ class Sequence(object):
             uid="translated_{}".format(self.uid),
             seq_type="AA",
             s="".join(
-                [code[s[i:i+3]] for i in xrange(0, len(s) - 2, 3)]
+                [code[s[i:i+3]] for i in range(0, len(s) - 2, 3)]
             ),
             info=self.info
         )

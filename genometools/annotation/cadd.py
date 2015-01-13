@@ -95,7 +95,7 @@ def cadd_score(variants):
             download_url = "http://cadd.gs.washington.edu/static/finished/{}"
             download_url = download_url.format(dld_fn)
             success = False
-            for i in xrange(24): # Try, wait for 2 minutes, retry.
+            for i in range(24): # Try, wait for 2 minutes, retry.
                 time.sleep(2 * 60)
 
                 r = requests.get(download_url, stream=True)
