@@ -24,7 +24,7 @@ import pandas as pd
 
 import gzip
 
-Line = namedtuple(
+_Line = namedtuple(
     "Line",
     ["name", "chrom", "pos", "a1", "a2", "probabilities"]
 )
@@ -52,7 +52,7 @@ class Impute2File(object):
                 print(line)
 
         # Read as dosage.
-        with open(Impute2File(fn), {dosage}) as f:
+        with open(Impute2File(fn), "dosage") as f:
             for dosage_vector, info in f:
                 pass
 
@@ -60,6 +60,20 @@ class Impute2File(object):
         with open(Impute2File(fn)) as f:
             # 1 row per sample and 1 column per variant. Values between 0 and 2
             m = f.as_matrix()
+
+    If you use the ``dosage`` mode, you can also add additional arguments:
+
+        - prob_threshold: Genotype probability cutoff for no call values (NaN).
+        - is_chr12: Not implemented yet, but dosage is computed differently
+                    for sexual chromosomes for men (hemizygote).
+        - sex_vector: Not implemented yet, but this is a vector representing
+                      the gender of every sample (for dosage computation on
+                      sexual chromosomes).
+
+    .. warning::
+
+        Be careful with the :py:func:`Impute2File.as_matrix()` function as it
+        will  try to load the WHOLE Impute2 file in memory.
 
     """
 
@@ -205,8 +219,8 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
     data.loc[data.dmax < prob_threshold, :] = np.nan
 
     return (data.dosage.values, {
-        "major": major,
-        "minor": minor,
+        "ref": major,
+        "alt": minor,
         "maf": maf,
     })
 
@@ -238,4 +252,4 @@ def _read_impute2_line(line):
     prob = np.array(row[5:], dtype=float)
     prob.shape = (prob.shape[0] // 3, 3)
 
-    return Line(name, chrom, pos, a1, a2, prob)
+    return _Line(name, chrom, pos, a1, a2, prob)
