@@ -43,7 +43,7 @@ class Impute2File(object):
 
     This also implements the context manager interface.
 
-    Usage:
+    Usage: ::
 
         # Read as probabilities (Line tuples).
         with open(Impute2File(fn)) as f:
@@ -74,6 +74,10 @@ class Impute2File(object):
 
         Be careful with the :py:func:`Impute2File.as_matrix()` function as it
         will  try to load the WHOLE Impute2 file in memory.
+
+    .. todo::
+
+        Add thorough testing for this class.
 
     """
 
@@ -143,7 +147,6 @@ class Impute2File(object):
         return m, df
 
     def __next__(self):
-        """Parses and returns a line from the queue. """
         line = next(self._file)
         if line is None:
             # Done with the file.
@@ -160,6 +163,15 @@ class Impute2File(object):
     next = __next__
 
     def readline(self):
+        """Read a single line from the Impute2File.
+
+        This will return either a ``Line`` including the genotype probabilities
+        or a dosage vector. This depends on the `mode` (the second argument
+        given to the file when it was opened).
+
+        Available modes are ``dosage`` and ``line``.
+
+        """
         return self.next()
 
     def __iter__(self):

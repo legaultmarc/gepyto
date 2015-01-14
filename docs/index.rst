@@ -15,6 +15,8 @@ Contents:
 
    db.rst
 
+   formats.rst
+
    annotation.rst
 
    utils.rst
