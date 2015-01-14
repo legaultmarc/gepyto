@@ -125,7 +125,7 @@ class Sequence(object):
         if self.seq_type == "RNA":
             # We need to convert the genetic code to RNA.
             code = {}
-            for k, v in DNA_GENETIC_CODE.iteritems():
+            for k, v in DNA_GENETIC_CODE.items():
                 k = k.replace("t", "u")
                 code[k] = v
 
