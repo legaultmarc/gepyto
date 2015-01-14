@@ -132,7 +132,7 @@ class Impute2File(object):
         snp_info_list = []
         for v, info in self:
             snp_vector_list.append(v)
-            snp_info_list.append((info["major"], info["minor"], info["maf"]))
+            snp_info_list.append((info["ref"], info["alt"], info["maf"]))
 
         m = np.array(snp_vector_list) # snp x sample
         m = m.T # We transpose to get sample x snp matrix (standard for stats)
