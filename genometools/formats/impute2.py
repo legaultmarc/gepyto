@@ -116,7 +116,7 @@ class Impute2File(object):
 
         :returns: A numpy matrix where columns represent variant dosage
                   between 0 and 2 and a dataframe describing the variants
-                  (ref, alt, maf).
+                  (major, minor, maf).
         :type: tuple
 
         .. warning::
@@ -134,13 +134,13 @@ class Impute2File(object):
         snp_info_list = []
         for v, info in self:
             snp_vector_list.append(v)
-            snp_info_list.append((info["ref"], info["alt"], info["maf"]))
+            snp_info_list.append((info["major"], info["minor"], info["maf"]))
 
         m = np.array(snp_vector_list) # snp x sample
         m = m.T # We transpose to get sample x snp matrix (standard for stats)
 
         # Make the information df.
-        df = pd.DataFrame(snp_info_list, columns=["ref", "alt", "maf"])
+        df = pd.DataFrame(snp_info_list, columns=["maror", "minor", "maf"])
 
         # Put the file like it was.
         self._file.seek(prev_pos)
@@ -233,8 +233,8 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
     data.loc[data.dmax < prob_threshold, :] = np.nan
 
     return (data.dosage.values, {
-        "ref": major,
-        "alt": minor,
+        "major": major,
+        "minor": minor,
         "maf": maf,
     })
 
