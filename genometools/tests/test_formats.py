@@ -24,7 +24,7 @@ from .. import formats as fmts
 def compare_lines(l1, l2):
     """Compare line tuples. """
     # Compare the first 4 elements (snpid, chrom, pos, a1, a2).
-    for i in xrange(5):
+    for i in range(5):
         if l1[i] != l2[i]:
             return False
 
@@ -96,6 +96,10 @@ class TestImpute2Class(unittest.TestCase):
             np.array([np.nan, 0.099, 0]), 
             {"alt": "C", "ref": "T", "maf": 0}
         )
+
+    def tearDown(self):
+        # Closing the temporary file
+        self.f.close()
 
     def test_syntax(self):
         """This is mostly to test the syntax for object initialization. """
