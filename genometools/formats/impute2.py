@@ -102,10 +102,12 @@ class Impute2File(object):
                 if keyword in kw:
                     self.dosage_arguments[keyword] = kwargs[keyword]
                 else:
+                    self._file.close()
                     raise TypeError("__init__() got an unexpected keyword "
                         "argument '{}'".format(keyword))
         else:
             if len(kwargs) > 0:
+                self._file.close()
                 raise TypeError("__init__() got an unexpected keyword "
                         "argument '{}'".format(kwargs.keys()[0]))
 
