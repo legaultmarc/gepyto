@@ -42,7 +42,10 @@ def compare_dosages(self, d1, d2):
         else:
             self.assertAlmostEqual(info1[k], info2[k])
     
-    return (v1 == v2).all()
+    # Checking the dosage values (nan != nan in numpy)
+    v1_nan = np.isnan(v1)
+    v2_nan = np.isnan(v2)
+    return ((v1 == v2) | (v1_nan & v2_nan)).all()
 
 
 class TestImpute2Class(unittest.TestCase):
@@ -54,13 +57,20 @@ class TestImpute2Class(unittest.TestCase):
     """
 
     def setUp(self):
-        # So we have 2 SNPs and 3 samples.
+        # So we have 2 SNPs and 3 samples. (first IMPUTE2 file)
         self.f = tempfile.NamedTemporaryFile("w")
         self.f.write("""
 1 rs12345 1231415 A G 1 0 0 0.988 0.002 0 0 0.997 0.003
 1 rs23456 3214569 T C 0.869 0.130 0 0.903 0.095 0.002 1 0 0
 """.strip())
         self.f.seek(0)
+
+        # Second IMPUTE2 file
+        self.f2 = tempfile.NamedTemporaryFile("w")
+        self.f2.write("""
+rs1234567 1 1234567 A T 1 0 0 0.1 0.3 0.6 0.1 0.35 0.55 0 1 0
+""".strip())
+        self.f2.seek(0)
 
         self.prob_snp1 = (
             "rs12345",
@@ -82,6 +92,16 @@ class TestImpute2Class(unittest.TestCase):
             # TT, TT, TT
         )
 
+        self.prob_snp3 = (
+            "rs1234567",
+            "1",
+            1234567,
+            "A",
+            "T",
+            np.array([[1, 0, 0], [0.1, 0.3, 0.6], [0.1, 0.35, 0.55],
+                      [0, 1, 0]]),
+        )
+
         self.dosage_snp1 = (
             np.array([0., 0.002, 1.003]), 
             {"alt": "G", "ref": "A", "maf": 1 / 6.0}
@@ -92,14 +112,20 @@ class TestImpute2Class(unittest.TestCase):
             {"alt": "C", "ref": "T", "maf": 0}
         )
 
-        self.dosage_snp2_thresh = (
-            np.array([np.nan, 0.099, 0]), 
-            {"alt": "C", "ref": "T", "maf": 0}
+        self.dosage_snp3_thresh_0 = (
+            np.array([2, 0.5, 0.55, 1]),
+            {"alt": "A", "ref": "T", "maf": 3 / 8.0},
+        )
+
+        self.dosage_snp3_thresh_9 = (
+            np.array([0, np.nan, np.nan, 1]),
+            {"alt": "T", "ref": "A", "maf": 1 / 4.0},
         )
 
     def tearDown(self):
         # Closing the temporary file
         self.f.close()
+        self.f2.close()
 
     def test_syntax(self):
         """This is mostly to test the syntax for object initialization. """
@@ -129,7 +155,6 @@ class TestImpute2Class(unittest.TestCase):
 
     def test_proba_reader(self):
         """This is to read the probabilities matrix. """
-
         with fmts.impute2.Impute2File(self.f.name) as f:
             for i, line in enumerate(f):
                 if i == 0:
@@ -139,9 +164,8 @@ class TestImpute2Class(unittest.TestCase):
                 else:
                     raise Exception()
 
-    def test_imputation(self):
+    def test_dosage(self):
         """This is to read as dosage vectors. """
-
         with fmts.impute2.Impute2File(self.f.name, "dosage") as f:
             for i, line in enumerate(f):
                 if i == 0:
@@ -159,3 +183,22 @@ class TestImpute2Class(unittest.TestCase):
                     ))
                 else:
                     raise Exception()
+
+    def test_dosage_maf(self):
+        """Test the maf computation with different prob threshold."""
+        # Checking for probability threshold of 0
+        with fmts.impute2.Impute2File(self.f2.name, "dosage") as f:
+            self.assertTrue(compare_dosages(
+                self,
+                f.readline(),
+                self.dosage_snp3_thresh_0,
+            ))
+
+        # Checking for probability threshold of 0.9
+        with fmts.impute2.Impute2File(self.f2.name, "dosage",
+                                      prob_threshold=0.9) as f:
+            self.assertTrue(compare_dosages(
+                self,
+                f.readline(),
+                self.dosage_snp3_thresh_9,
+            ))
