@@ -140,7 +140,7 @@ class Impute2File(object):
         m = m.T # We transpose to get sample x snp matrix (standard for stats)
 
         # Make the information df.
-        df = pd.DataFrame(snp_info_list, columns=["maror", "minor", "maf"])
+        df = pd.DataFrame(snp_info_list, columns=["major", "minor", "maf"])
 
         # Put the file like it was.
         self._file.seek(prev_pos)
