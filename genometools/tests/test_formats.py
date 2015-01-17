@@ -68,7 +68,7 @@ class TestImpute2Class(unittest.TestCase):
         # Second IMPUTE2 file
         self.f2 = tempfile.NamedTemporaryFile("w")
         self.f2.write("""
-rs1234567 1 1234567 A T 1 0 0 0.1 0.3 0.6 0.1 0.35 0.55 0 1 0
+1 rs1234567 1234567 A T 1 0 0 0.1 0.3 0.6 0.1 0.35 0.55 0 1 0
 """.strip())
         self.f2.seek(0)
 
@@ -104,22 +104,22 @@ rs1234567 1 1234567 A T 1 0 0 0.1 0.3 0.6 0.1 0.35 0.55 0 1 0
 
         self.dosage_snp1 = (
             np.array([0., 0.002, 1.003]), 
-            {"minor": "G", "major": "A", "maf": 1 / 6.0}
+            {"minor": "G", "major": "A", "maf": 1 / 6.0, "name": "rs12345"}
         )
 
         self.dosage_snp2 = (
             np.array([0.130, 0.099, 0]), 
-            {"minor": "C", "major": "T", "maf": 0}
+            {"minor": "C", "major": "T", "maf": 0, "name": "rs23456"}
         )
 
         self.dosage_snp3_thresh_0 = (
             np.array([2, 0.5, 0.55, 1]),
-            {"minor": "A", "major": "T", "maf": 3 / 8.0},
+            {"minor": "A", "major": "T", "maf": 3 / 8.0, "name": "rs1234567"},
         )
 
         self.dosage_snp3_thresh_9 = (
             np.array([0, np.nan, np.nan, 1]),
-            {"minor": "T", "major": "A", "maf": 1 / 4.0},
+            {"minor": "T", "major": "A", "maf": 1 / 4.0, "name": "rs1234567"},
         )
 
     def tearDown(self):

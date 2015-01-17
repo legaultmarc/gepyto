@@ -134,13 +134,17 @@ class Impute2File(object):
         snp_info_list = []
         for v, info in self:
             snp_vector_list.append(v)
-            snp_info_list.append((info["major"], info["minor"], info["maf"]))
+            snp_info_list.append(
+                (info["name"], info["major"], info["minor"], info["maf"])
+            )
 
         m = np.array(snp_vector_list) # snp x sample
         m = m.T # We transpose to get sample x snp matrix (standard for stats)
 
         # Make the information df.
-        df = pd.DataFrame(snp_info_list, columns=["major", "minor", "maf"])
+        df = pd.DataFrame(
+            snp_info_list, columns=["name", "major", "minor", "maf"]
+        )
 
         # Put the file like it was.
         self._file.seek(prev_pos)
@@ -236,6 +240,7 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
         "major": major,
         "minor": minor,
         "maf": maf,
+        "name": line.name,
     })
 
 
