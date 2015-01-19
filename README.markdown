@@ -20,6 +20,9 @@ available both in the `demos` directory or through nbviewer:
 - [Variant annotation](http://nbviewer.ipython.org/github/legaultmarc/genometools/blob/master/demos/Variant%20Annotation.ipynb)
 - [Sequence analysis](http://nbviewer.ipython.org/github/legaultmarc/genometools/blob/master/demos/Sequence%20analysis.ipynb)
 
+We didn't write demos yet, but we have the nice ``genometools.formats`` module
+which adds functionality to parse both ``Impute2`` and ``SeqXML`` files.
+
 # Installation
 ## For users
 
