@@ -75,10 +75,6 @@ class Impute2File(object):
         Be careful with the :py:func:`Impute2File.as_matrix()` function as it
         will  try to load the WHOLE Impute2 file in memory.
 
-    .. todo::
-
-        Add thorough testing for this class.
-
     """
 
     def __init__(self, fn, mode=LINE, **kwargs):
@@ -133,18 +129,15 @@ class Impute2File(object):
         snp_vector_list = []
         snp_info_list = []
         for v, info in self:
+            information_fields = info.keys()
             snp_vector_list.append(v)
-            snp_info_list.append(
-                (info["name"], info["major"], info["minor"], info["maf"])
-            )
+            snp_info_list.append([info[k] for k in information_fields])
 
         m = np.array(snp_vector_list) # snp x sample
         m = m.T # We transpose to get sample x snp matrix (standard for stats)
 
         # Make the information df.
-        df = pd.DataFrame(
-            snp_info_list, columns=["name", "major", "minor", "maf"]
-        )
+        df = pd.DataFrame(snp_info_list, columns=information_fields)
 
         # Put the file like it was.
         self._file.seek(prev_pos)
@@ -241,6 +234,8 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
         "minor": minor,
         "maf": maf,
         "name": line.name,
+        "chrom": line.chrom,
+        "pos": line.pos,
     })
 
 
