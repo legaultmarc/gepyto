@@ -64,7 +64,7 @@ class Impute2File(object):
     If you use the ``dosage`` mode, you can also add additional arguments:
 
         - prob_threshold: Genotype probability cutoff for no call values (NaN).
-        - is_chr12: Not implemented yet, but dosage is computed differently
+        - is_chr23: Not implemented yet, but dosage is computed differently
                     for sexual chromosomes for men (hemizygote).
         - sex_vector: Not implemented yet, but this is a vector representing
                       the gender of every sample (for dosage computation on
