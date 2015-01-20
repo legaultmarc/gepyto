@@ -112,9 +112,11 @@ def cadd_score(variants):
                 raise Exception("Timeout while fetching CADD Results.")
 
             # Read the file and add the C Scores to a copy of the input file.
-            with gzip.open(fn) as f:
-                annotations = _parse_annotation(f)
-            os.remove(fn)
+            try:
+                with gzip.open(fn) as f:
+                    annotations = _parse_annotation(f)
+            finally:
+                os.remove(fn)
 
             return annotations
 
@@ -232,7 +234,7 @@ def _parse_annotation(cadd_output):
                 info[k] = None
 
         annotations.append(
-            (feature, v, c, info)
+            (feature_id, v, c, info)
         )
 
     return annotations
