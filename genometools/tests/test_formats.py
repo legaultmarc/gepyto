@@ -65,7 +65,7 @@ class TestImpute2Class(unittest.TestCase):
         self.f = tempfile.NamedTemporaryFile("w")
         self.f.write("""
 1 rs12345 1231415 A G 1 0 0 0.988 0.002 0 0 0.997 0.003
-1 rs23456 3214569 T C 0.869 0.130 0 0.903 0.095 0.002 1 0 0
+1 rs23456 3214569 T C 0.869 0.130 0 0.903 0.095 0.002 0 0 1
 """.strip())
         self.f.seek(0)
 
@@ -92,8 +92,8 @@ class TestImpute2Class(unittest.TestCase):
             3214569,
             "T",
             "C",
-            np.array([[0.869, 0.130, 0], [0.903, 0.095, 0.002], [1, 0, 0]])
-            # TT, TT, TT
+            np.array([[0.869, 0.130, 0], [0.903, 0.095, 0.002], [0, 0, 1]])
+            # TT, TT, CC
         )
 
         self.prob_snp3 = (
@@ -113,8 +113,8 @@ class TestImpute2Class(unittest.TestCase):
         )
 
         self.dosage_snp2 = (
-            np.array([0.130, 0.099, 0]), 
-            {"minor": "C", "major": "T", "maf": 0, "name": "rs23456", 
+            np.array([0.130, 0.099, 2]), 
+            {"minor": "C", "major": "T", "maf": 2 / 6.0, "name": "rs23456", 
              "chrom": "1", "pos": 3214569}
         )
 
@@ -136,12 +136,12 @@ class TestImpute2Class(unittest.TestCase):
         )
 
         self.hard_call_snp2 = (
-            np.array(["T T", "T T", "T T"]),
+            np.array(["T T", "T T", "C C"]),
             {"name": "rs23456", "chrom": "1", "pos": 3214569},
         )
 
         self.hard_call_snp2_thresh_9 = (
-            np.array(["0 0", "T T", "T T"]),
+            np.array(["0 0", "T T", "C C"]),
             {"name": "rs23456", "chrom": "1", "pos": 3214569},
         )
 
