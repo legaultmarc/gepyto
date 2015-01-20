@@ -42,10 +42,14 @@ def compare_dosages(self, d1, d2):
         else:
             self.assertAlmostEqual(info1[k], info2[k])
     
-    # Checking the dosage values (nan != nan in numpy)
-    v1_nan = np.isnan(v1)
-    v2_nan = np.isnan(v2)
-    return ((v1 == v2) | (v1_nan & v2_nan)).all()
+    if v1.dtype is np.dtype(float):
+        # Checking the dosage values (nan != nan in numpy)
+        v1_nan = np.isnan(v1)
+        v2_nan = np.isnan(v2)
+        return ((v1 == v2) | (v1_nan & v2_nan)).all()
+
+    if v1.dtype.char == "U" or v1.dtype.char == "S":
+        return (v1 == v2).all()
 
 
 class TestImpute2Class(unittest.TestCase):
@@ -124,6 +128,21 @@ class TestImpute2Class(unittest.TestCase):
             np.array([0, np.nan, np.nan, 1]),
             {"minor": "T", "major": "A", "maf": 1 / 4.0, "name": "rs1234567",
              "chrom": "1", "pos": 1234567},
+        )
+
+        self.hard_call_snp1 = (
+            np.array(["A A", "A A", "A G"]),
+            {"name": "rs12345", "chrom": "1", "pos": 1231415},
+        )
+
+        self.hard_call_snp2 = (
+            np.array(["T T", "T T", "T T"]),
+            {"name": "rs23456", "chrom": "1", "pos": 3214569},
+        )
+
+        self.hard_call_snp2_thresh_9 = (
+            np.array(["0 0", "T T", "T T"]),
+            {"name": "rs23456", "chrom": "1", "pos": 3214569},
         )
 
     def tearDown(self):
@@ -206,3 +225,44 @@ class TestImpute2Class(unittest.TestCase):
                 f.readline(),
                 self.dosage_snp3_thresh_9,
             ))
+
+    def test_hard_call(self):
+        """Test the hard calling of imputed markers."""
+        with fmts.impute2.Impute2File(self.f.name, "hard_call") as f:
+            for i, line in enumerate(f):
+                if i == 0:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_snp1
+                    ))
+
+                elif i == 1:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_snp2
+                    ))
+
+                else:
+                    raise Exception()
+
+        with fmts.impute2.Impute2File(self.f.name, "hard_call",
+                                      prob_threshold=0.9) as f:
+            for i, line in enumerate(f):
+                if i == 0:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_snp1
+                    ))
+
+                elif i == 1:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_snp2_thresh_9
+                    ))
+
+                else:
+                    raise Exception()
