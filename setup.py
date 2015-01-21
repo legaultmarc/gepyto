@@ -9,12 +9,10 @@
 import os
 from setuptools import setup
 
-from gepyto import __version__ as gepyto_version
-
 
 setup(
     name="gepyto",
-    version=gepyto_version,
+    version="0.1",
     description=("Utilities and tools to interface with genomic databases "
                  "and for genome bioinformatics."),
     author="Marc-Andre Legault",
