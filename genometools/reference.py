@@ -86,6 +86,26 @@ class Reference(object):
 
 
 def check_snp_reference(snp, ref, flip):
+    """Utility function to check if a snp has the correct reference allele.
+
+    :param snp: The :py:class:`genometools.structures.variants.SNP` object.
+    :type snp: :py:class:`genometools.structures.variants.SNP`
+
+    :param ref: The ``pyfaidx`` reference object.
+    :type ref: :py:class:`pyfaidx.Fasta`
+
+    :param flip: A flag. If True, the return value is a variant with alleles
+                 flipped if necessary. If False, a bool is returned: True
+                 if the alleles are correct.
+    :type flip: bool
+
+    :returns: Either a :py:class:`genometools.structures.variant.SNP` with
+              flipped alleles or a bool.
+
+    This is used internally by :py:class:`Reference`, but it is also
+    available to users, but you need to provide a pyfaidx Fasta object.
+
+    """
     # Get the reference.
     ref_chrom = ref.get(snp.chrom)
     if ref_chrom is None:
