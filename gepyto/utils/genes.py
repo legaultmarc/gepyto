@@ -1,7 +1,7 @@
 
 # Utilities to handle gene data.
 
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -10,8 +10,8 @@
 
 
 __author__ = "Marc-Andre Legault"
-__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
-                 "Perreault. All rights reserved.")
+__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
+                 "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
@@ -35,7 +35,7 @@ def ensembl_genes_in_region(region, bare=False, build=BUILD):
     :param build: The genome build to use (GRCh37 or GRCh38).
     :type build: str
 
-    :returns: A list of :py:class:`genometools.structures.genes.Gene`.
+    :returns: A list of :py:class:`gepyto.structures.genes.Gene`.
     :rtype: list
 
     """

@@ -1,5 +1,5 @@
 
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -29,7 +29,7 @@ from . import formats
 
 def test():
     unittest.main(
-        module="genometools.tests",
+        module="gepyto.tests",
         exit=False
     )
 

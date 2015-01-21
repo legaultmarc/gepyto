@@ -1,5 +1,5 @@
 
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -8,13 +8,11 @@
 
 
 __author__ = "Marc-Andre Legault"
-
-__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
-                 "Perreault. All rights reserved.")
+__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
+                 "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
 from . import variants
 from . import genes
-from . import sequences
 

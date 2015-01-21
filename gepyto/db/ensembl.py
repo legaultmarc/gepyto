@@ -3,7 +3,7 @@
 # This module contains code strictly to interact with Ensembl and not to 
 # interpret the response or the underlying biology. 
 
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -12,8 +12,8 @@
 
 
 __author__ = "Marc-Andre Legault"
-__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
-                 "Perreault. All rights reserved.")
+__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
+                 "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 

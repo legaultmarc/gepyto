@@ -1,5 +1,5 @@
 
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -8,8 +8,8 @@
 
 
 __author__ = "Marc-Andre Legault"
-__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
-                 "Perreault. All rights reserved.")
+__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
+                 "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
@@ -28,15 +28,15 @@ def cadd_score(variants):
     """Annotate the variants using CADD (cadd.gs.washington.edu).
 
     :param vcf: A list of Variant (or subclass) objects.
-    :type vcf: :py:class:`genometools.structures.variants.Variant`
+    :type vcf: :py:class:`gepyto.structures.variants.Variant`
 
     :returns: A list of annotations.
     :rtype: list
 
     The format for the annotations is a list of tuples of the form
     (``Transript``, ``Variant``, ``C score``, ``info``). If the annotation is
-    for an Ensembl regulatory feature, the ID (ENSR) replaces the 
-    :py:class:`genometools.structures.genes.Transcript` object.
+    for an Ensembl regulatory feature, the ID (ENSR) replaces the
+    :py:class:`gepyto.structures.genes.Transcript` object.
 
     The info dictionary contains extra annotations from the CADD output.
     

@@ -4,7 +4,7 @@
 # interpret the response or the underlying biology.
 # RegulomeDB: http://regulome.stanford.edu
 
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -13,8 +13,8 @@
 
 
 __author__ = "Louis-Philippe Lemieux Perreault"
-__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
-                 "Perreault. All rights reserved.")
+__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
+                 "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
@@ -42,7 +42,7 @@ def query_regulomedb(query, build="GRCh37"):
     """Query RegulomeDB for a particular region.
 
     :param query: The genomic region to query (hg19).
-    :type query: str or :py:class:`genometools.structures.variants.Variant`
+    :type query: str or :py:class:`gepyto.structures.variants.Variant`
 
     :param build: The genomic build (only GRCh37 is accepted by RegulomeDB).
     :type build: str
@@ -50,9 +50,9 @@ def query_regulomedb(query, build="GRCh37"):
     :returns: A list of annotation for the region or variant.
     :rtype: list
 
-    The ``query`` might be either a genomic region (0-based) or a variant object
-    (:py:class:`genometools.structures.variants.SNP` or
-    :py:class:`genometools.structures.variants.Indel`).
+    The ``query`` might be either a genomic region (0-based) or a variant
+    object (:py:class:`gepyto.structures.variants.SNP` or
+    :py:class:`gepyto.structures.variants.Indel`).
 
     """
 

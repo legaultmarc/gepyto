@@ -1,7 +1,7 @@
 #
 # Implementation of the IMPUTE2 format into Python objects.
 #
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit

@@ -2,7 +2,7 @@
 # Structures to handle genes and their associated transcripts and their
 # proteins.
 
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -10,8 +10,8 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 __author__ = "Marc-Andre Legault"
-__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
-                 "Perreault. All rights reserved.")
+__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
+                 "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
@@ -153,7 +153,7 @@ class Gene(object):
     def get_ortholog_sequences(self):
         """Queries Ensembl to get Sequence objects representing orthologs.
 
-        :returns: A list of :py:class:`genometools.structures.sequences.Sequence`
+        :returns: A list of :py:class:`gepyto.structures.sequences.Sequence`
         :rtype: list
 
         """
@@ -162,7 +162,7 @@ class Gene(object):
     def get_paralog_sequences(self):
         """Queries Ensembl to get Sequence objects representing paralogs.
 
-        :returns: A list of :py:class:`genometools.structures.sequences.Sequence`
+        :returns: A list of :py:class:`gepyto.structures.sequences.Sequence`
         :rtype: list
 
         """
@@ -486,7 +486,7 @@ class Transcript(object):
         :type seq_type: str
 
         :returns: A Sequence object representing the feature.
-        :rtype: :py:class:`genometools.structures.sequences.Sequence`
+        :rtype: :py:class:`gepyto.structures.sequences.Sequence`
 
         """
 

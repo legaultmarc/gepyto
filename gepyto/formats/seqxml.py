@@ -3,7 +3,7 @@
 # some elementary operations.
 # See http://orthoxml.org/xml/Main.html for more information on the format.
 #
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -12,8 +12,8 @@
 
 
 __author__ = "Marc-Andre Legault"
-__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
-                 "Perreault. All rights reserved.")
+__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
+                 "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
@@ -21,7 +21,7 @@ import collections
 import gzip
 import xml.etree.ElementTree as etree
 
-from genometools.structures.sequences import Sequence
+from ..structures.sequences import Sequence
 
 
 class SeqXML(object):
