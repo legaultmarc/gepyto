@@ -1,8 +1,8 @@
 # Instructions for developers
 
-Thank you for your interest in ``genometools``. To get started, you can follow
-the instructions from the [README](README.markdown#devs_install). After you
-will be ready to start working on genometools!
+Thank you for your interest in ``gepyto``. To get started, you can follow the
+instructions from the [README](README.markdown#devs_install). After you will be
+ready to start working on ``gepyto``!
 
 ## Fork, clone, commit and all that
 
@@ -21,13 +21,13 @@ following the pattern of what is already in there. Basically, generating the
 documentation is as easy as:
 
 ```
-.. automodule:: genometools.a_package.a_module
+.. automodule:: gepyto.a_package.a_module
     :members:
 ```
 
 Writing good tests is also a prerequisite for merging. All the tests from the
-``genometools.tests`` directory will be automatically included in the build
-process. They can be invoked using the ``setup.py test`` command.
+``gepyto.tests`` directory will be automatically included in the build process.
+They can be invoked using the ``setup.py test`` command.
 
 We use the dafault Python ``unittest`` module. Reading the official
 documentation is probably the best way to understand how to write tests. You
@@ -51,8 +51,8 @@ The most important things to note are:
   everything else.
 
 Also for dependencies, we try to use the standard library if convenient. If a
-third-party library is needed, we usually just import it. The user will need
-to install it manually if he uses the corresponding `genometools` functionality.
+third-party library is needed, we usually just import it. The user will need to
+install it manually if he uses the corresponding ``gepyto`` functionality.
 
 We also document all public functions for use with Sphinx autodoc. Reading
 a little bit of our current code should allow you to familiarize with the system
@@ -78,15 +78,15 @@ def a_cool_function(a):
 
 You will need to add your module to the documentation in the `docs` directory.
 Refer to the [Sphinx documentation](http://sphinx-doc.org/) and the existing
-`genometools` documentation to get more information.
+``gepyto`` documentation to get more information.
 
 ## Design
 
 The idea behind this package was to provide bioinformaticists working in Python
 a general purpose framework to work with "omics" data. It originated from our
 realisation that we kept writing the same functions accross projects and that
-doing it well, once was probably better. Hence, we try to make genometools
-easy to use, small and modular so we can reuse it often accross projects.
+doing it well, once was probably better. Hence, we try to make ``gepyto`` easy
+to use, small and modular so we can reuse it often accross projects.
 
 If you add nice things to the package, it would be a good idea to write 
 thorough tests, documentation and [IPython Notebook](http://ipython.org/notebook.html) 

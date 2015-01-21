@@ -5,18 +5,18 @@ Python Objects (``structures``)
 Genes
 ------
 
-.. automodule:: genometools.structures.genes
+.. automodule:: gepyto.structures.genes
     :members:
 
 Variants
 ---------
 
-.. automodule:: genometools.structures.variants
+.. automodule:: gepyto.structures.variants
     :members:
 
 Sequences
 ----------
 
-.. automodule:: genometools.structures.sequences
+.. automodule:: gepyto.structures.sequences
     :members:
 
