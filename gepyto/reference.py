@@ -20,7 +20,6 @@ import os
 import functools
 
 from . import settings
-from .structures.variants import SNP, Indel
 
 from pyfaidx import Fasta
 
@@ -34,6 +33,11 @@ class Reference(object):
 
     Also note that if the path is not in the ``~/.gtconfig/gtrc.ini`` file,
     gepyto will look for an environment variable named ``REFERENCE_PATH``.
+
+    .. todo::
+
+        This should transparently fallback to a remote version (e.g. Ensembl
+        REST API) to query the reference.
 
     """
     def __init__(self):
@@ -76,15 +80,33 @@ class Reference(object):
 
         """
 
-        if isinstance(variant, SNP):
+        type_message = ("Unsupported argument to check_variant_reference. "
+                        "A SNP object has to be provided.")
+
+        if not (hasattr(variant, "chrom") and 
+                hasattr(variant, "pos") and
+                hasattr(variant, "ref") and
+                hasattr(variant, "alt")):
+            raise TypeError(type_message)
+
+        if len(variant.ref) == len(variant.alt) == 1:
             return check_snp_reference(variant, self.ref, flip)
-        elif isinstance(variant, Indel):
-            raise TypeError("Unsupported argument to check_variant_reference. "
-                            "A SNP object has to be provided.")
-            # return check_indel_reference(variant, self.ref, flip)
         else:
-            raise TypeError("Unsupported argument to check_variant_reference. "
-                            "A SNP object has to be provided.")
+            # return check_indel_reference(variant, self.ref, flip)
+            raise TypeError(type_message)
+
+    def get_nucleotide(self, chrom, pos):
+        """Get the nucleotide at the given genomic position. """
+        return str(self.ref.get(chrom)[pos - 1].seq)
+
+    def close(self):
+        self.ref.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
 
 
 def check_snp_reference(snp, ref, flip):
