@@ -32,6 +32,7 @@ _Line = namedtuple(
 # Two possible ways of iterating over Impute2File
 DOSAGE = "dosage"
 LINE = "line"
+HARD_CALL = "hard_call"
 
 
 class Impute2File(object):
@@ -64,7 +65,7 @@ class Impute2File(object):
     If you use the ``dosage`` mode, you can also add additional arguments:
 
         - prob_threshold: Genotype probability cutoff for no call values (NaN).
-        - is_chr12: Not implemented yet, but dosage is computed differently
+        - is_chr23: Not implemented yet, but dosage is computed differently
                     for sexual chromosomes for men (hemizygote).
         - sex_vector: Not implemented yet, but this is a vector representing
                       the gender of every sample (for dosage computation on
@@ -87,10 +88,13 @@ class Impute2File(object):
 
         self._file = opener(fn)
 
-        assert mode in (DOSAGE, LINE)
+        assert mode in (DOSAGE, LINE, HARD_CALL)
         self._mode = mode
 
+        # The special function arguments
         self.dosage_arguments = {}
+        self.hard_calls_arguments = {}
+
         if self._mode is DOSAGE:
             # Parse kwargs that can be passed to the _compute_dosage function.
             kw = ("prob_threshold", "is_chr23", "sex_vector")
@@ -101,6 +105,18 @@ class Impute2File(object):
                     self._file.close()
                     raise TypeError("__init__() got an unexpected keyword "
                         "argument '{}'".format(keyword))
+
+        elif self._mode is HARD_CALL:
+            # Parse kwargs that can be passed to the _compute_hard_calls
+            # function.
+            kw = ("prob_threshold",)
+            for keyword in kwargs:
+                if keyword in kw:
+                    self.hard_calls_arguments[keyword] = kwargs[keyword]
+                else:
+                    self._file.close()
+                    raise TypeError("__init__() got an unexpected keyword "
+                                    "argument '{}'".format(keyword))
         else:
             if len(kwargs) > 0:
                 self._file.close()
@@ -152,10 +168,13 @@ class Impute2File(object):
             raise StopIteration()
 
         if self._mode is DOSAGE:
-            return _compute_dosage(
-                _read_impute2_line(line), 
-                **self.dosage_arguments
-            )
+            return _compute_dosage(_read_impute2_line(line),
+                                   **self.dosage_arguments)
+
+        elif self._mode is HARD_CALL:
+            return _compute_hard_calls(_read_impute2_line(line),
+                                       **self.hard_calls_arguments)
+
         elif self._mode is LINE:
             return _read_impute2_line(line)
 
@@ -237,6 +256,28 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
         "chrom": line.chrom,
         "pos": line.pos,
     })
+
+
+def _compute_hard_calls(line, prob_threshold=0):
+    """Computes hard calls from probabilities (IMPUTE2)."""
+    # Getting the possible genotypes
+    possible_geno = np.array([" ".join(line.a1 * 2),
+                              " ".join(line.a1 + line.a2),
+                              " ".join(line.a2 * 2)])
+
+    # The final genotype
+    final_geno = possible_geno[np.argmax(line.probabilities, axis=1)]
+
+    # The threshold
+    low_quality = np.max(line.probabilities, axis=1) < prob_threshold
+    final_geno[low_quality] = "0 0"
+
+    return (
+        final_geno,
+        {"name": line.name,
+         "chrom": line.chrom,
+         "pos": line.pos},
+    )
 
 
 def _read_impute2_line(line):

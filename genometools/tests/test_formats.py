@@ -42,10 +42,14 @@ def compare_dosages(self, d1, d2):
         else:
             self.assertAlmostEqual(info1[k], info2[k])
     
-    # Checking the dosage values (nan != nan in numpy)
-    v1_nan = np.isnan(v1)
-    v2_nan = np.isnan(v2)
-    return ((v1 == v2) | (v1_nan & v2_nan)).all()
+    if v1.dtype is np.dtype(float):
+        # Checking the dosage values (nan != nan in numpy)
+        v1_nan = np.isnan(v1)
+        v2_nan = np.isnan(v2)
+        return ((v1 == v2) | (v1_nan & v2_nan)).all()
+
+    if v1.dtype.char == "U" or v1.dtype.char == "S":
+        return (v1 == v2).all()
 
 
 class TestImpute2Class(unittest.TestCase):
@@ -61,7 +65,7 @@ class TestImpute2Class(unittest.TestCase):
         self.f = tempfile.NamedTemporaryFile("w")
         self.f.write("""
 1 rs12345 1231415 A G 1 0 0 0.988 0.002 0 0 0.997 0.003
-1 rs23456 3214569 T C 0.869 0.130 0 0.903 0.095 0.002 1 0 0
+1 rs23456 3214569 T C 0.869 0.130 0 0.903 0.095 0.002 0 0 1
 """.strip())
         self.f.seek(0)
 
@@ -88,8 +92,8 @@ class TestImpute2Class(unittest.TestCase):
             3214569,
             "T",
             "C",
-            np.array([[0.869, 0.130, 0], [0.903, 0.095, 0.002], [1, 0, 0]])
-            # TT, TT, TT
+            np.array([[0.869, 0.130, 0], [0.903, 0.095, 0.002], [0, 0, 1]])
+            # TT, TT, CC
         )
 
         self.prob_snp3 = (
@@ -109,8 +113,8 @@ class TestImpute2Class(unittest.TestCase):
         )
 
         self.dosage_snp2 = (
-            np.array([0.130, 0.099, 0]), 
-            {"minor": "C", "major": "T", "maf": 0, "name": "rs23456", 
+            np.array([0.130, 0.099, 2]), 
+            {"minor": "C", "major": "T", "maf": 2 / 6.0, "name": "rs23456", 
              "chrom": "1", "pos": 3214569}
         )
 
@@ -124,6 +128,21 @@ class TestImpute2Class(unittest.TestCase):
             np.array([0, np.nan, np.nan, 1]),
             {"minor": "T", "major": "A", "maf": 1 / 4.0, "name": "rs1234567",
              "chrom": "1", "pos": 1234567},
+        )
+
+        self.hard_call_snp1 = (
+            np.array(["A A", "A A", "A G"]),
+            {"name": "rs12345", "chrom": "1", "pos": 1231415},
+        )
+
+        self.hard_call_snp2 = (
+            np.array(["T T", "T T", "C C"]),
+            {"name": "rs23456", "chrom": "1", "pos": 3214569},
+        )
+
+        self.hard_call_snp2_thresh_9 = (
+            np.array(["0 0", "T T", "C C"]),
+            {"name": "rs23456", "chrom": "1", "pos": 3214569},
         )
 
     def tearDown(self):
@@ -206,3 +225,44 @@ class TestImpute2Class(unittest.TestCase):
                 f.readline(),
                 self.dosage_snp3_thresh_9,
             ))
+
+    def test_hard_call(self):
+        """Test the hard calling of imputed markers."""
+        with fmts.impute2.Impute2File(self.f.name, "hard_call") as f:
+            for i, line in enumerate(f):
+                if i == 0:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_snp1
+                    ))
+
+                elif i == 1:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_snp2
+                    ))
+
+                else:
+                    raise Exception()
+
+        with fmts.impute2.Impute2File(self.f.name, "hard_call",
+                                      prob_threshold=0.9) as f:
+            for i, line in enumerate(f):
+                if i == 0:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_snp1
+                    ))
+
+                elif i == 1:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_snp2_thresh_9
+                    ))
+
+                else:
+                    raise Exception()
