@@ -9,7 +9,7 @@ CADD
 deleteriousness based on multiple features. It can score variants from any
 genomic region. 
 
-.. automodule:: genometools.annotation.cadd
+.. automodule:: gepyto.annotation.cadd
     :members:
 
 RegulomeDB
@@ -23,6 +23,6 @@ regions that have been biochemically characterized to regulation transcription.
 Source of these data include public datasets from GEO, the ENCODE project, and
 published literature. The tool can also score variants from any genomic region.
 
-.. automodule:: genometools.annotation.regulome
+.. automodule:: gepyto.annotation.regulome
     :members:
 

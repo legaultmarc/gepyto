@@ -9,7 +9,7 @@ Ensembl
 `REST API <http://rest.ensembl.org/>`_. We added an interface that does some
 throttling and manages the JSON response from the API. 
 
-.. automodule:: genometools.db.ensembl
+.. automodule:: gepyto.db.ensembl
     :members:
 
 Appris
@@ -17,9 +17,9 @@ Appris
 
 The `Appris <http://appris.bioinfo.cnio.es/appris.html>`_ database aims to
 annotate alternative splice isoforms. We provide an interface to this database
-that can annotate :py:class:`genometools.structures.genes.Transcript` objects.
+that can annotate :py:class:`gepyto.structures.genes.Transcript` objects.
 
-.. automodule:: genometools.db.appris
+.. automodule:: gepyto.db.appris
     :members:
 
 Index
@@ -37,6 +37,6 @@ index and create smaller index files, but will result in slower lookups.
 The structure of the index is a pickled python dictionary using chromosomes
 as keys and lists of ``(position, file seek)`` as values.
 
-.. automodule:: genometools.db.index
+.. automodule:: gepyto.db.index
     :members:
 

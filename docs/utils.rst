@@ -5,12 +5,12 @@ Utilities (``utils``)
 Genes
 ------
 
-.. automodule:: genometools.utils.genes
+.. automodule:: gepyto.utils.genes
     :members:
 
 Variants
 ---------
 
-.. automodule:: genometools.utils.variants
+.. automodule:: gepyto.utils.variants
     :members:
 

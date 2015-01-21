@@ -249,7 +249,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'genometools', u'GenomeTools Documentation',
+    ('index', 'gepyto', u'GenomeTools Documentation',
      [u'Marc-André Legault, Louis-Philippe Lemieux Perreault'], 1)
 ]
 
