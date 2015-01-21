@@ -79,10 +79,12 @@ class Reference(object):
         if isinstance(variant, SNP):
             return check_snp_reference(variant, self.ref, flip)
         elif isinstance(variant, Indel):
-            return check_indel_reference(variant, self.ref, flip)
+            raise TypeError("Unsupported argument to check_variant_reference. "
+                            "A SNP object has to be provided.")
+            # return check_indel_reference(variant, self.ref, flip)
         else:
             raise TypeError("Unsupported argument to check_variant_reference. "
-                            "A SNP or Indel object has to be provided.")
+                            "A SNP object has to be provided.")
 
 
 def check_snp_reference(snp, ref, flip):
@@ -139,5 +141,29 @@ def check_snp_reference(snp, ref, flip):
 
 
 def check_indel_reference(indel, ref, flip):
-    pass
+    """TODO """
+    # Get the reference.
+    ref_chrom = ref.get(indel.chrom)
+    if ref_chrom is None:
+        s = "Can't find chromosome '{}' in the reference genome.".format(
+            indel.chrom
+        )
+        raise ValueError(s)
 
+    # Insertions:
+    # We will use the VCF format, so if the ref is '-', we will make change
+    # the start (-1) and add the preceding nucleotide.
+    if indel.ref == "-":
+        indel.start -= 1
+        # Remember that we are using 0-based indexing in pyfaidx.
+        prev_nuc = ref_chrom[indel.start - 1]
+        indel.ref = prev_nuc
+        # We also need to prepend this nucleotide in the alt.
+        indel.alt = prev_nuc + indel.alt
+
+    # For insertions, we also need to check that the end - start makes sense.
+
+    # Deletions:
+    # The ref should be ok for this case.
+
+    return
