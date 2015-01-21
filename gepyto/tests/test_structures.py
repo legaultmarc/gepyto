@@ -33,9 +33,24 @@ class TestVariant(unittest.TestCase):
         self.snp_rs = "rs111715315"
         self.indel_rs = "rs72301544"
 
-        self.snp = struct.variants.SNP("19", 55663495, self.snp_rs, "C", "T")
-        self.indel  = struct.variants.Indel("19", 55663540, 55663542, 
-            self.indel_rs, "TC", "-")
+        # Simple variations
+        self.snp = struct.variants.SNP(chrom="19", pos=55663495,
+                                       rs=self.snp_rs, ref="C", alt="T")
+        self.indel  = struct.variants.Indel(chrom="19", pos=55663539,
+                                            rs=self.indel_rs,
+                                            ref="TTC", alt="T")
+
+        # Insertions
+        self.insertion_rs = "rs11273285"
+        self.insertion = struct.variants.Indel(chrom="2", pos=221032,
+                                               rs=self.insertion_rs,
+                                               ref="T", alt="TCAGGCACGTGG")
+
+        # Deletions
+        self.deletion_rs = "rs376881461"
+        self.deletion = struct.variants.Indel(chrom="1", pos=873775,
+                                              rs=self.deletion_rs,
+                                              ref="CAGAGCCT", alt="C")
 
     def test_snp(self):
         snp = struct.variants.Variant.from_ensembl_api(self.snp_rs)
@@ -44,6 +59,14 @@ class TestVariant(unittest.TestCase):
     def test_indel(self):
         indel = struct.variants.Variant.from_ensembl_api(self.indel_rs)
         self.assertEqual(indel, self.indel)
+
+    def test_insertion(self):
+        indel = struct.variants.Variant.from_ensembl_api(self.insertion_rs)
+        self.assertEqual(indel, self.insertion)
+
+    def test_deletion(self):
+        indel = struct.variants.Variant.from_ensembl_api(self.deletion_rs)
+        self.assertEqual(indel, self.deletion)
 
     def test_snp_init_from_str(self):
         snp = struct.variants.SNP.from_str("chr19:55663495_C/T")
@@ -55,7 +78,7 @@ class TestVariant(unittest.TestCase):
         self.assertEqual(self.snp.get_position(), "chr19:55663495")
 
     def test_indel_get_position(self):
-        self.assertEqual(self.indel.get_position(), "chr19:55663540-55663542")
+        self.assertEqual(self.indel.get_position(), "chr19:55663539")
 
     def test_variant_in(self):
         snp_g_in = struct.genes.Gene(build="GRCh37", chrom="19", 
