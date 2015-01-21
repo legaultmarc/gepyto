@@ -1,5 +1,5 @@
 
-# This file is part of genometools.
+# This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
@@ -8,8 +8,8 @@
 
 
 __author__ = "Marc-Andre Legault"
-__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
-                 "Perreault. All rights reserved.")
+__copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
+                 "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import unittest
@@ -28,13 +28,13 @@ class TestIndex(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.fn = ".test_index_genometools.txt"
+        cls.fn = ".test_index_gepyto.txt"
         cls.f = open(cls.fn, "w")
         
-        cls.positions = [("chr1", 1), (1, 11), (1, 123), (2, 1), (2, 11), (2, 11), 
-            (2, 11), (2, 11), (2, 21), (2, 34), (3, 1), (3, 2), (3, 3), (3, 4),
-            (3, 4), (3, 5), ("chr3", 6), (3, 7), (3, 8), (3, 9), (4, 1), (5, 2), 
-            ("X", 3), ("Y", 2),
+        cls.positions = [("chr1", 1), (1, 11), (1, 123), (2, 1), (2, 11),
+            (2, 11), (2, 11), (2, 11), (2, 21), (2, 34), (3, 1), (3, 2),
+            (3, 3), (3, 4), (3, 4), (3, 5), ("chr3", 6), (3, 7), (3, 8),
+            (3, 9), (4, 1), (5, 2), ("X", 3), ("Y", 2),
         ]
         for chrom, pos in cls.positions:
             # Generate a random third column.
@@ -64,7 +64,8 @@ class TestIndex(unittest.TestCase):
                 TestIndex.f.seek(f_pos)
                 line = TestIndex.f.readline()
 
-                # Check if the indexed chrom and pos are the same as in the file.
+                # Check if the indexed chrom and pos are the same as in the
+                # file.
                 file_chrom, file_pos, _ = line.split("\t")
                 file_chrom = file_chrom.lstrip("chr")
                 file_pos = int(file_pos)
