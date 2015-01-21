@@ -64,7 +64,7 @@ class Reference(object):
            with the human genome reference.
 
         :param variant: The variant to verify.
-        :type variant: :py:class:`structures.variants.Variant` subclass
+        :type variant: :py:class:`gepyto.structures.variants.Variant` subclass
 
         :param flip: If ``True`` incorrect ``(ref, alt)`` pairs will be
                      flipped (Default: False).
@@ -90,8 +90,8 @@ class Reference(object):
 def check_snp_reference(snp, ref, flip):
     """Utility function to check if a snp has the correct reference allele.
 
-    :param snp: The :py:class:`genometools.structures.variants.SNP` object.
-    :type snp: :py:class:`genometools.structures.variants.SNP`
+    :param snp: The :py:class:`gepyto.structures.variants.SNP` object.
+    :type snp: :py:class:`gepyto.structures.variants.SNP`
 
     :param ref: The ``pyfaidx`` reference object.
     :type ref: :py:class:`pyfaidx.Fasta`
@@ -101,7 +101,7 @@ def check_snp_reference(snp, ref, flip):
                  if the alleles are correct.
     :type flip: bool
 
-    :returns: Either a :py:class:`genometools.structures.variant.SNP` with
+    :returns: Either a :py:class:`gepyto.structures.variant.SNP` with
               flipped alleles or a bool.
 
     This is used internally by :py:class:`Reference`, but it is also
