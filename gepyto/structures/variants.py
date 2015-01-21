@@ -61,7 +61,8 @@ class Variant(object):
             for i, p in enumerate(_PARAMETERS):
                 setattr(self, p, args[i])
         else:
-            for k in kwargs.keys():
+            keys = list(kwargs.keys())
+            for k in keys:
                 if k not in _PARAMETERS:
                     raise Exception("Unknown parameter {}.".format(k))
 
@@ -288,14 +289,14 @@ class Indel(Variant):
         return abs(len(self.ref) - len(self.alt))
 
     def get_position(self, zero_based=False):
-        """Returns an indel in the standard chrXX:START-END notation. 
+        """Returns an indel in the standard chrXX:POS notation. 
         
         :param zero_based: Indicates if zero based coordinates should be used.
                            This is False by default (1 based coordinates).
 
         """
         pos = self.pos - 1 if zero_based else self.pos
-        return "chr{}:{}-{}".format(self.chrom, pos, pos + self.length)
+        return "chr{}:{}".format(self.chrom, pos)
 
     def vcf_line(self):
         """Returns a line describing the current variant as expected by the VCF
