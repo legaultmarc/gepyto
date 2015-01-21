@@ -83,7 +83,7 @@ def query_regulomedb(query, build="GRCh37"):
     req = Request(url, urlencode(values).encode("utf-8"))
 
     try:
-        response = urlopen(req).read().decode()
+        response = urlopen(req).read().decode("utf-8")
     except HTTPError:
         logging.warning("Request failed for query '{}'.".format(data)) 
         return []
