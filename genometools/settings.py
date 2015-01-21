@@ -15,5 +15,64 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe Lemieux "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-BUILD = "GRCh37"
+import os
+
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
+
+
+BUILD = ""
+REFERENCE_PATH = ""
+
+def _create_default_config(fn):
+    # Create the default configuration file.
+
+    config = configparser.RawConfigParser()
+
+    config.add_section("GenometoolsConfiguration")
+    config.set("GenometoolsConfiguration", "BUILD", "GRCh37")
+    config.set("GenometoolsConfiguration", "REFERENCE_PATH", "")
+
+    with open(fn, "w") as f:
+        config.write(f)
+
+
+def _init_reference(config):
+    global BUILD
+    global REFERENCE_PATH
+
+    BUILD = config.get("GenometoolsConfiguration", "BUILD")
+    REFERENCE_PATH = config.get("GenometoolsConfiguration", "REFERENCE_PATH")
+
+    # The REFERENCE_PATH can also be set as an environment variable.
+    if REFERENCE_PATH == "" and os.environ.get("REFERENCE_PATH"):
+        REFERENCE_PATH = os.environ.get("REFERENCE_PATH")
+
+
+def _init_settings():
+    # Create the directory where the configuration file will be.
+    config_dir = os.path.abspath(os.path.join(
+        os.path.expanduser("~"),
+        ".gtconfig"
+    ))
+
+    if not os.path.isdir(config_dir):
+        os.mkdir(config_dir)
+
+    # Check if the configuration file exists.
+    config_file = os.path.join(config_dir, "gtrc.ini")
+    if not os.path.isfile(config_file):
+        _create_default_config(config_file)
+
+    # Read the configuration file.
+    config = configparser.RawConfigParser()
+    config.read(config_file)
+
+    # Load settings related to the reference genome.
+    _init_reference(config)
+
+
+_init_settings()
 
