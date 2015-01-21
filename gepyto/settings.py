@@ -31,9 +31,9 @@ def _create_default_config(fn):
 
     config = configparser.RawConfigParser()
 
-    config.add_section("GenometoolsConfiguration")
-    config.set("GenometoolsConfiguration", "BUILD", "GRCh37")
-    config.set("GenometoolsConfiguration", "REFERENCE_PATH", "")
+    config.add_section("gepytoConfiguration")
+    config.set("gepytoConfiguration", "BUILD", "GRCh37")
+    config.set("gepytoConfiguration", "REFERENCE_PATH", "")
 
     with open(fn, "w") as f:
         config.write(f)
@@ -43,8 +43,8 @@ def _init_reference(config):
     global BUILD
     global REFERENCE_PATH
 
-    BUILD = config.get("GenometoolsConfiguration", "BUILD")
-    REFERENCE_PATH = config.get("GenometoolsConfiguration", "REFERENCE_PATH")
+    BUILD = config.get("gepytoConfiguration", "BUILD")
+    REFERENCE_PATH = config.get("gepytoConfiguration", "REFERENCE_PATH")
 
     # The REFERENCE_PATH can also be set as an environment variable.
     if REFERENCE_PATH == "" and os.environ.get("REFERENCE_PATH"):
@@ -55,14 +55,14 @@ def _init_settings():
     # Create the directory where the configuration file will be.
     config_dir = os.path.abspath(os.path.join(
         os.path.expanduser("~"),
-        ".gtconfig"
+        ".gepyto"
     ))
 
     if not os.path.isdir(config_dir):
         os.mkdir(config_dir)
 
     # Check if the configuration file exists.
-    config_file = os.path.join(config_dir, "gtrc.ini")
+    config_file = os.path.join(config_dir, "gepytorc.ini")
     if not os.path.isfile(config_file):
         _create_default_config(config_file)
 
