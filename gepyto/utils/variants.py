@@ -74,7 +74,7 @@ def ensembl_variants_in_region(region, build=BUILD):
 
         if len(variant["alt_alleles"]) < 2:
             # Weirdly, we have less than two alleles.
-            logging.warning("RS: {} has only one allele (ignored).".format(rs))
+            logging.warning("RS={} has only one allele (ignored).".format(rs))
             continue
 
         ref = str(variant["alt_alleles"][0])
@@ -86,11 +86,12 @@ def ensembl_variants_in_region(region, build=BUILD):
 
         for alt in variant["alt_alleles"][1:]:
             if is_snp:
-                variant_obj = SNP(chrom, start, rs, ref, str(alt))
+                variant_li = [SNP(chrom, start, rs, ref, str(alt))]
             else:
-                variant_obj = Indel(chrom, start, end, rs, ref, str(alt))
+                variant["allele_string"] = "/".join(variant["alt_alleles"])
+                variant_li = Indel._parse_ensembl_indel(rs, variant)
 
-            variants.append(variant_obj)
+            variants += variant_li
 
     if len(variants) == 0:
         logging.warning("No SNP detected in region {}.".format(region))

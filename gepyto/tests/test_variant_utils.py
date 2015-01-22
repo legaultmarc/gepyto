@@ -24,8 +24,8 @@ class TestVariantUtils(unittest.TestCase):
     def setUp(self):
         self.region = "chr19:55663495-55663541"
         self.snp = SNP("19", 55663495, "rs111715315", "C", "T")
-        self.indel  = Indel("19", 55663540, 55663542, "rs72301544", "TC", "-")
-        self.indel2 = Indel("19", 55663541, 55663542, "rs56007758", "CT", "-")
+        self.indel  = Indel("19", 55663539, "rs72301544", "TTC", "T")
+        self.indel2 = Indel("19", 55663540, "rs56007758", "TCT", "T")
 
     def test_ensembl_variant_in_region(self):
         """Test the Ensembl region query for variants.

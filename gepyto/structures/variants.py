@@ -147,63 +147,37 @@ class Variant(object):
 
         """
 
-        with Reference() as reference:
-            if build == "GRCh37":
-                url = ("http://grch37.rest.ensembl.org/variation/homo_sapiens/"
-                       "{snp}?content-type=application/json")
-            elif build == "GRCh38":
-                url = ("http://rest.ensembl.org/variation/homo_sapiens/{snp}"
-                       "?content-type=application/json")
-            else:
-                raise Exception("Unknown build '{}'.".format(build))
+        if build == "GRCh37":
+            url = ("http://grch37.rest.ensembl.org/variation/homo_sapiens/"
+                   "{snp}?content-type=application/json")
+        elif build == "GRCh38":
+            url = ("http://rest.ensembl.org/variation/homo_sapiens/{snp}"
+                   "?content-type=application/json")
+        else:
+            raise Exception("Unknown build '{}'.".format(build))
 
-            url = url.format(snp=rs)
-            response = query_ensembl(url)
+        url = url.format(snp=rs)
+        response = query_ensembl(url)
 
-            if response is None:
-                return response
-            
-            for mapping in response["mappings"]:
-                if mapping["assembly_name"] == build:
-                    # This is a SNP
-                    if mapping["start"] == mapping["end"]:
-                        pos = "chr{}_{}".format(
-                            mapping["location"].split("-")[0],
-                            mapping["allele_string"]
-                        )
+        if response is None:
+            return response
+        
+        for mapping in response["mappings"]:
+            if mapping["assembly_name"] == build:
+                # This is a SNP
+                if mapping["start"] == mapping["end"]:
+                    pos = "chr{}_{}".format(
+                        mapping["location"].split("-")[0],
+                        mapping["allele_string"]
+                    )
 
-                        # Note that for multi (>2) allelic loci, this will
-                        # return a list of variants.
-                        return SNP.from_str(pos, rs=rs)
+                    # Note that for multi (>2) allelic loci, this will
+                    # return a list of variants.
+                    return SNP.from_str(pos, rs=rs)
 
-                    # Otherwise an Indel
-                    else:
-                        chrom = str(mapping["seq_region_name"])
-                        pos = mapping["start"]
-                        alleles = str(mapping["allele_string"]).split("/")
-                        ref = alleles[0]
-                        alts = alleles[1:]
-
-                        indels = []
-                        for alt in list(alts):
-                            if ref == "-":
-                                # This is an insertion. We need to fetch the 
-                                # previous nucleotide and append it.
-                                pos -= 1
-                                n = reference.get_nucleotide(chrom, pos)
-                                ref = n
-                                alt = n + alt
-
-                            elif alt == "-":
-                                pos -= 1
-                                n = reference.get_nucleotide(chrom, pos)
-                                alt = n
-                                ref = n + ref
-                                
-                            indel = Indel(chrom, pos, rs, ref, alt)
-                            indels.append(indel)
-
-                        return indels[0] if len(indels) == 1 else indels
+                # Otherwise an Indel
+                else:
+                    return Indel._parse_ensembl_indel(rs, mapping)
 
 
 class Indel(Variant):
@@ -288,6 +262,36 @@ class Indel(Variant):
         """
         return abs(len(self.ref) - len(self.alt))
 
+    @classmethod
+    def _parse_ensembl_indel(cls, rs, mapping):
+        chrom = str(mapping["seq_region_name"])
+        pos = mapping["start"]
+        alleles = str(mapping["allele_string"]).split("/")
+        ref = alleles[0]
+        alts = alleles[1:]
+
+        indels = []
+        with Reference() as reference:
+            for alt in list(alts):
+                if ref == "-":
+                    # This is an insertion. We need to fetch the 
+                    # previous nucleotide and append it.
+                    pos -= 1
+                    n = reference.get_nucleotide(chrom, pos)
+                    ref = n
+                    alt = n + alt
+
+                elif alt == "-":
+                    pos -= 1
+                    n = reference.get_nucleotide(chrom, pos)
+                    alt = n
+                    ref = n + ref
+                    
+                indel = cls(chrom, pos, rs, ref, alt)
+                indels.append(indel)
+
+        return indels
+
     def get_position(self, zero_based=False):
         """Returns an indel in the standard chrXX:POS notation. 
         
@@ -339,10 +343,7 @@ class Indel(Variant):
 
         """
         variants = Variant.from_ensembl_api(rs, build)
-        if type(variants) is list:
-            return [v for v in variants if v.__class__ is cls]
-        else:
-            return variants
+        return [v for v in variants if v.__class__ is cls]
 
 
 class SNP(Variant):
@@ -426,10 +427,7 @@ class SNP(Variant):
 
         """
         variants = Variant.from_ensembl_api(rs, build)
-        if type(variants) is list:
-            return [v for v in variants if v.__class__ is cls]
-        else:
-            return variants
+        return [v for v in variants if v.__class__ is cls]
 
     @classmethod
     def from_str(cls, s, rs=None):
@@ -438,7 +436,12 @@ class SNP(Variant):
         :param s: The string to parse the SNP from (Format: chrXX:YYY_R/A).
         :param rs: An optional parameter specifying the rs number.
 
-        :returns: A SNP object or a list of SNP objects for multi-allelic loci.
+        :returns: A list of SNP objects.
+
+        If it is a multi-allelic loci, the list will contain one SNP per
+        alternative allele.
+
+        If it is not, this will be a list of length 1...
 
         """
         s = s.lstrip("chr")
@@ -446,16 +449,14 @@ class SNP(Variant):
         pos, s = s.split("_")
         alleles = s.split("/")
         ref = alleles[0]
-        alts = alleles[1:]
+        alts = list(alleles[1:])
 
-        if len(alts) > 1:
-            var_list = []
-            for alt in alts:
-                v = cls(chrom, pos, rs, ref, alt)
-                var_list.append(v)
-            return var_list
+        var_list = []
+        for alt in alts:
+            v = cls(chrom, pos, rs, ref, alt)
+            var_list.append(v)
 
-        return cls(chrom, pos, rs, ref, alts[0])
+        return var_list
 
     def __eq__(self, other):
         if type(self) is not type(other):

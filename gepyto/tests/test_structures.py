@@ -54,25 +54,25 @@ class TestVariant(unittest.TestCase):
 
     def test_snp(self):
         snp = struct.variants.Variant.from_ensembl_api(self.snp_rs)
-        self.assertEqual(snp, self.snp)
+        self.assertEqual(snp, [self.snp])
 
     def test_indel(self):
         indel = struct.variants.Variant.from_ensembl_api(self.indel_rs)
-        self.assertEqual(indel, self.indel)
+        self.assertEqual(indel, [self.indel])
 
     def test_insertion(self):
         indel = struct.variants.Variant.from_ensembl_api(self.insertion_rs)
-        self.assertEqual(indel, self.insertion)
+        self.assertEqual(indel, [self.insertion])
 
     def test_deletion(self):
         indel = struct.variants.Variant.from_ensembl_api(self.deletion_rs)
-        self.assertEqual(indel, self.deletion)
+        self.assertEqual(indel, [self.deletion])
 
     def test_snp_init_from_str(self):
         snp = struct.variants.SNP.from_str("chr19:55663495_C/T")
-        snp.rs = self.snp_rs
+        snp[0].rs = self.snp_rs
 
-        self.assertEqual(snp, self.snp)
+        self.assertEqual(snp, [self.snp])
 
     def test_snp_get_position(self):
         self.assertEqual(self.snp.get_position(), "chr19:55663495")
