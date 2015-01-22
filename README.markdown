@@ -1,8 +1,5 @@
+[![Build Status](https://travis-ci.org/legaultmarc/gepyto.svg?branch=master)](https://travis-ci.org/legaultmarc/gepyto)
 [![Documentation Status](https://readthedocs.org/projects/gepyto/badge/?version=latest)](https://readthedocs.org/projects/gepyto/?badge=latest)
-
-[![Build Status](https://travis-ci.org/legaultmarc/gepyto.svg?branch=master)](https://travis-ci.org/legaultmarc/gepyto) (branch: `master`)
-
-[![Build Status](https://travis-ci.org/legaultmarc/gepyto.svg?branch=dev)](https://travis-ci.org/legaultmarc/gepyto) (branch: `dev`)
 
 
 # Introduction
