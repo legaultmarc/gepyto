@@ -227,7 +227,7 @@ class Indel(Variant):
         self.ref = self.ref.upper()
         self.alt = self.alt.upper()
         try:
-            assert re.match(r"([0-9]{1,2}|MT|X|Y)", str(self.chrom))
+            assert re.match(settings.CHROM_REGEX, str(self.chrom))
             assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
             assert type(self.pos) is int
             assert type(self.ref) is str
@@ -369,7 +369,7 @@ class SNP(Variant):
         self.ref = self.ref.upper()
         self.alt = self.alt.upper()
         try:
-            assert re.match(r"([0-9]{1,2}|MT|X|Y)", str(self.chrom))
+            assert re.match(settings.CHROM_REGEX, str(self.chrom))
             assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
             assert type(self.ref) is str and len(self.ref) == 1
             assert type(self.alt) is str and len(self.alt) == 1

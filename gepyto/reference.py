@@ -18,10 +18,79 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import os
 import functools
+import re
+from collections import namedtuple
 
 from . import settings
+from . import db
 
 from pyfaidx import Fasta
+
+
+class _RemoteChromosome(object):
+    def __init__(self, url):
+        self.url = url
+
+    def __getitem__(self, key):
+        # This also makes sure that we used 1-based indexing.
+        if type(key) is int:
+            key += 1
+            return self.do_query(key, key + 1)
+        elif type(key) is slice:
+            return self.do_query(key.start + 1, key.stop + 1)
+
+    def do_query(self, start, end):
+        start, end = sorted([start, end])
+        res = db.ensembl.query_ensembl(
+            self.url.format(start=start, end=end - 1)
+        )
+
+        # Note the "comp" field is ignored (see pyfaidx.Sequence).
+        seq_obj = namedtuple("Sequence", ["name", "seq", "start", "end",])
+        return seq_obj(res["id"], res["seq"], start, end)
+
+
+class _RemoteReference(object):
+    """Imitates the pyfaidx.Fasta object to query the human genome reference.
+
+    This works by using the Ensembl REST API to do sequence region queries.
+    It should be able to transparently replace the :py:class:`pyfaidx.Fasta`
+    class.
+
+    """
+    def __init__(self, ref):
+        if ref not in ("GRCh37", "GRCh38"):
+            raise ValueError("Supported builds are GRCh37 and GRCh38.")
+
+        self.url = "http://{build}.rest.ensembl.org/sequence/region/".format(
+            build=ref
+        )
+
+        self.url += "homo_sapiens/{chrom}"
+
+    def __getitem__(self, key):
+        """This is to implement the ref[] behaviour.
+
+        It assumes that the argument will be a chromosome.
+
+        """
+        if not re.match(settings.CHROM_REGEX, key):
+            raise KeyError("Invalid chromosome '{}'.".format(key))
+
+        url = (self.url.format(chrom=key)+
+               ":{start}-{end}?content-type=application/json")
+
+        return _RemoteChromosome(url)
+
+    def get(self, key):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return None
+
+    def close(self):
+        pass
+
 
 class Reference(object):
     """Interface to the human genome reference file.
@@ -34,14 +103,20 @@ class Reference(object):
     Also note that if the path is not in the ``~/.gtconfig/gtrc.ini`` file,
     gepyto will look for an environment variable named ``REFERENCE_PATH``.
 
-    .. todo::
+    If the genome file can't be found, this class fallbacks to the Ensembl
+    remote API to get the sequences.
 
-        This should transparently fallback to a remote version (e.g. Ensembl
-        REST API) to query the reference.
+    Thie behavious can also be forced by using the ``remote=True`` argument.
 
     """
-    def __init__(self):
-        self.ref = Fasta(settings.REFERENCE_PATH)
+    def __init__(self, remote=False):
+        if not remote:
+            try:
+                self.ref = Fasta(settings.REFERENCE_PATH)
+            except IOError:
+                self.ref = _RemoteReference(settings.BUILD)
+        else:
+            self.ref = _RemoteReference(settings.BUILD)
 
         # Add a get method. This will not be sensitive to "chr" prefixes.
         def get(fasta, chrom):

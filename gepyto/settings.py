@@ -16,6 +16,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
 import os
+import re
 
 try:
     import ConfigParser as configparser
@@ -25,6 +26,8 @@ except ImportError:
 
 BUILD = ""
 REFERENCE_PATH = ""
+
+CHROM_REGEX = re.compile(r"([0-9]{1,2}|MT|X|Y)")
 
 def _create_default_config(fn):
     # Create the default configuration file.
