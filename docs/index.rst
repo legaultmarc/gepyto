@@ -13,6 +13,8 @@ Contents:
 
    structures.rst
 
+   reference.rst
+
    db.rst
 
    formats.rst

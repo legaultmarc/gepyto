@@ -145,7 +145,7 @@ class Reference(object):
 
     def check_variant_reference(self, variant, flip=False):
         """Given a variant, makes sure that the 'ref' allele is consistent
-           with the human genome reference.
+        with the human genome reference.
 
         :param variant: The variant to verify.
         :type variant: :py:class:`gepyto.structures.variants.Variant` subclass
@@ -231,7 +231,7 @@ class Reference(object):
 
 class InvalidMapping(Exception):
     """Exception representing an invalid mapping that we can't fix
-       automatically.
+    automatically.
 
     This can happen if the provided allele is incorrect for non-SNP variants.
     In this case we don't know if the locus is bad or if the sequence is bad.
@@ -298,7 +298,7 @@ def check_indel_reference(indel, ref, fix):
 
     :param ref: A reference object.
     :type ref: :py:class:`Reference`
-    
+
     In fix mode, this function will try to standardise the alleles for the
     given indel. This means that the VCF format will be enforced. No "-"
     alleles will be authorized.
