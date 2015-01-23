@@ -19,6 +19,7 @@ __all__ = []
 import re
 
 from .. import settings
+from . import sequences
 
 class _Segment(object):
     def __init__(self, chrom, start, end):
@@ -40,6 +41,10 @@ class _Segment(object):
     def __ne__(self, seg):
         return not self.__eq__(seg)
 
+    def to_sequence(self):
+        return sequences.Sequence.from_reference(self.chrom, self.start, 
+                                                 self.end)
+
     @staticmethod
     def merge_segments(li):
         """Merge overlapping segments in a sorted list."""
@@ -59,12 +64,13 @@ class _Segment(object):
         i = 0
         while i < len(li) - 1:
             j = i
-            first = li[i]
 
             # Walk as long as the segments are overlapping.
-            cur = li[j]
+            cur = li[i]
+            nxt = li[i + 1]
             block = [cur.start, cur.end]
-            nxt = li[j + 1]
+            if nxt.start <= cur.end:
+                block[1] = max(block[1], nxt.end)
             
             while nxt.start <= block[1] and j + 1 < len(li) - 1:
                 block[1] = max(block[1], nxt.end)
@@ -73,12 +79,12 @@ class _Segment(object):
                 nxt = li[j + 1]
 
             merged_segments.append(
-                _Segment(first.chrom, block[0], block[1])
+                _Segment(cur.chrom, block[0], block[1])
             )
             i = j + 1
 
-        if i == len(li) - 1:
-            merged_segments.append(li[i])
+        if li[-1].start > li[-2].end:
+            merged_segments.append(li[-1])
 
         return merged_segments
 
@@ -97,9 +103,6 @@ class Region(object):
         segments = _Segment.merge_segments(segments)
         return Region._from_segments(segments)
 
-    def intersection(self, region):
-        pass
-
     def overlaps_with(self, region):
         for seg1 in self.segments:
             for seg2 in region.segments:
@@ -107,6 +110,18 @@ class Region(object):
                     return True
 
         return False
+
+    @property
+    def sequence(self):
+        """Builds a Sequence object representing the region.
+
+        If the region is disjoint, a tuple of sequences is returned.
+        """
+        sequences = []
+        for seg in self.segments:
+            sequences.append(seg.to_sequence())
+
+        return sequences[0] if len(sequences) == 1 else tuple(sequences)
 
     @staticmethod
     def _from_segments(segments):

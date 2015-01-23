@@ -23,6 +23,7 @@ class TestRegion(unittest.TestCase):
         pass
 
     def test_segment_case1(self):
+        """Vanilla overlap."""
         li = [
             region._Segment("3", 1, 5),
             region._Segment("3", 7, 20),
@@ -41,6 +42,7 @@ class TestRegion(unittest.TestCase):
         self.assertEqual(merged, merged_ans)
 
     def test_segment_case2(self):
+        """One large chunk overlapping two smaller in the middle."""
         li = [
             region._Segment("3", 1, 2),
             region._Segment("3", 4, 15),
@@ -59,52 +61,83 @@ class TestRegion(unittest.TestCase):
         self.assertEqual(merged, merged_ans)
 
     def test_segment_case3(self):
-            li = [
-                region._Segment("3", 1, 5),
-                region._Segment("3", 2, 11),
-                region._Segment("3", 13, 21),
-            ]
+        """Overlap on the first one."""
+        li = [
+            region._Segment("3", 1, 5),
+            region._Segment("3", 2, 11),
+            region._Segment("3", 13, 21),
+        ]
 
-            merged = region._Segment.merge_segments(li)
+        merged = region._Segment.merge_segments(li)
 
-            merged_ans = [
-                region._Segment("3", 1, 11),
-                region._Segment("3", 13, 21),
-            ]
-            self.assertEqual(merged, merged_ans)
+        merged_ans = [
+            region._Segment("3", 1, 11),
+            region._Segment("3", 13, 21),
+        ]
+        self.assertEqual(merged, merged_ans)
 
     def test_segment_case4(self):
-            li = [
-                region._Segment("3", 1, 5),
-                region._Segment("3", 7, 11),
-                region._Segment("3", 7, 15),
-                region._Segment("3", 21, 26),
-            ]
+        """Overlapping border."""
+        li = [
+            region._Segment("3", 1, 5),
+            region._Segment("3", 7, 11),
+            region._Segment("3", 7, 15),
+            region._Segment("3", 21, 26),
+        ]
 
-            merged = region._Segment.merge_segments(li)
+        merged = region._Segment.merge_segments(li)
 
-            merged_ans = [
-                region._Segment("3", 1, 5),
-                region._Segment("3", 7, 15),
-                region._Segment("3", 21, 26),
-            ]
-            self.assertEqual(merged, merged_ans)
+        merged_ans = [
+            region._Segment("3", 1, 5),
+            region._Segment("3", 7, 15),
+            region._Segment("3", 21, 26),
+        ]
+        self.assertEqual(merged, merged_ans)
 
     def test_segment_case5(self):
-            li = [
-                region._Segment("3", 1, 5),
-                region._Segment("5", 7, 11),
-                region._Segment("3", 21, 26),
-            ]
+        """Different chromosomes raises Exception."""
+        li = [
+            region._Segment("3", 1, 5),
+            region._Segment("5", 7, 11),
+            region._Segment("3", 21, 26),
+        ]
 
-            self.assertRaises(Exception, region._Segment.merge_segments, li)
+        self.assertRaises(Exception, region._Segment.merge_segments, li)
 
     def test_segment_case6(self):
-            li = [
-                region._Segment("3", 1, 5),
-                region._Segment("3", 7, 11),
-                region._Segment("3", 21, 26),
-                region._Segment("3", 7, 15),
-            ]
+        """Unsorted list raises Exception."""
+        li = [
+            region._Segment("3", 1, 5),
+            region._Segment("3", 7, 11),
+            region._Segment("3", 21, 26),
+            region._Segment("3", 7, 15),
+        ]
 
-            self.assertRaises(Exception, region._Segment.merge_segments, li)
+        self.assertRaises(Exception, region._Segment.merge_segments, li)
+
+    def test_two_overlapping_segments(self):
+        li = [
+            region._Segment("3", 1, 5),
+            region._Segment("3", 2, 6),
+        ]
+
+        merged = region._Segment.merge_segments(li)
+
+        merged_ans = [
+            region._Segment("3", 1, 6),
+        ]
+        self.assertEqual(merged, merged_ans)
+
+    def test_two_not_overlapping_segments(self):
+        li = [
+            region._Segment("3", 1, 5),
+            region._Segment("3", 10, 20),
+        ]
+
+        merged = region._Segment.merge_segments(li)
+
+        merged_ans = [
+            region._Segment("3", 1, 5),
+            region._Segment("3", 10, 20),
+        ]
+        self.assertEqual(merged, merged_ans)
