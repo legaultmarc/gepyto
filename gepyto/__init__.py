@@ -12,10 +12,17 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __credits__ = ["Marc-Andre Legault", "Louis-Philippe Lemieux Perreault"]
-__version__ = "0.1"
 __maintainer__ = "Marc-Andre Legault"
 __email__ = "legaultmarc@gmail.com"
 __status__ = "Development"
+
+
+# Loading the version
+try:
+    from .version import gepyto_version as __version__
+
+except ImportError:
+    __version__ = None
 
 
 import unittest.main

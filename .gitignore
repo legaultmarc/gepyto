@@ -4,3 +4,5 @@ dist
 *.egg-info
 docs/_build
 build/
+
+gepyto/version.py
