@@ -13,17 +13,17 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
-
-import logging
-import re
-import os
-import bisect
 try:
     import cPickle
 except ImportError:
     import pickle as cPickle
+import logging
+import re
+import os
+import bisect
 
 import numpy as np
+
 
 def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
                 index_rate=0.2, ignore_startswith=None):
@@ -45,10 +45,10 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
     :type skip_lines: int
 
     :param index_rate: The approximate rate of line indexing. As an example,
-                       a file with 1000 lines and the default index_rate of 
+                       a file with 1000 lines and the default index_rate of
                        0.2 will have an index with ~200 entries.
     :type index_rate: float
-    
+
     :param ignore_startswith: Ignore lines that start with a given string.
                               This can be used to skip headers, but will not
                               be used to parse the rest of the file.
@@ -69,9 +69,9 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
 
     idx_fn = _get_index_fn(fn)
     idx = {}
-    
-    size = os.path.getsize(fn) # Total filesize
-    start = 0 # Byte position of the meat of the file (data).
+
+    size = os.path.getsize(fn)  # Total filesize
+    start = 0  # Byte position of the meat of the file (data).
     with open(fn, "r") as f:
         if skip_lines > 0:
             for i in range(skip_lines):
@@ -86,11 +86,9 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
                 line = f.readline()
             f.seek(cur)
 
-            
-
         start = f.tell()
 
-        size -= start # Adjust file size to remove header.
+        size -= start  # Adjust file size to remove header.
 
         # Estimate the line length using first 100 lines
         line_length = np.empty((100))
@@ -122,7 +120,7 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         # probably land in the middle of a line).
         cur = f.tell() + seek_jump
 
-        # We need to remember the previous position to make sure the file is 
+        # We need to remember the previous position to make sure the file is
         # sorted.
         prev_chrom = None
         prev_pos = None
@@ -192,11 +190,12 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
 
 
 def get_index(fn):
-    """Restores the index for a given file or builds it if the index was not previously created.
+    """Restores the index for a given file or builds it if the index was not
+       previously created.
 
     :param fn: The filname of the file to index.
     :type fn: str
- 
+
     :returns: The index dictionary corresponding to the input file.
     :rtype: dict
 
@@ -219,7 +218,7 @@ def goto(f, idx, chrom, pos):
     :param chrom: The queried chromosome.
     :param pos: The queried position on the chromosome.
 
-    :returns: True if the position was found and the cursor moved, False if 
+    :returns: True if the position was found and the cursor moved, False if
               the queried chromosome, position wasn't found.
     :rtype: bool
 
@@ -243,7 +242,7 @@ def goto(f, idx, chrom, pos):
 
     # Look if we can use chromosome indexing.
     if chrom in idx:
-        li = [i[0] for i in idx[chrom]] # Sorted list of pos
+        li = [i[0] for i in idx[chrom]]  # Sorted list of pos
         i = bisect.bisect_right(li, pos)
     else:
         i = None
@@ -251,7 +250,7 @@ def goto(f, idx, chrom, pos):
     if not i:
         # We didn't find something before in the index for this chromosome.
         # OR this chromosome is not in the index.
-        # We will look at the end of the previous chromosome if it is a 
+        # We will look at the end of the previous chromosome if it is a
         # numeric chromosome.
         if num_chrom is not None:
             num_prev_chrom = num_chrom - 1
@@ -262,24 +261,23 @@ def goto(f, idx, chrom, pos):
             # A previous chromosome is in the index, start from there.
             if prev_chrom in idx:
                 tell = idx[prev_chrom][-1][1]
-            # This chromosome and the previous are not in the index, start 
+            # This chromosome and the previous are not in the index, start
             # at the beginning.
             elif num_chrom != 1 and chrom not in idx:
                 logging.warning("Sparse coverage index, try increasing the "
                                 "index rate. Neither chromosome {} or "
                                 "{} were sampled in the index.".format(
-                                    num_chrom, prev_chrom 
+                                    num_chrom, prev_chrom
                                 ))
-                tell = 0 # This could be bad.
+                tell = 0  # This could be bad.
             # This is the first chromosome, start from the beginning, but don't
             # print a warning because it will probably be up top.
             elif num_chrom == 1:
                 tell = 0
             else:
                 raise Exception("The observed index structure was not "
-                    "anticipated, please report it (query: {}, {}).".format(
-                        chrom, pos
-                    ))
+                                "anticipated, please report it (query: "
+                                "{}, {}).".format(chrom, pos))
         else:
             # This is a non numeric chromosome.
             # Find the last numeric chromosome and look after.
@@ -298,7 +296,7 @@ def goto(f, idx, chrom, pos):
         # Iterate through the file.
         here = f.tell()
         line = f.readline().rstrip().split(delim)
-        if len(line) == 1: 
+        if len(line) == 1:
             # End of file.
             return False
 
@@ -339,4 +337,3 @@ def _get_index_fn(fn):
         ))
 
     return os.path.abspath("{}.gtidx".format(fn))
-
