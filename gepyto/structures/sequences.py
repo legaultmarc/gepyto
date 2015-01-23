@@ -20,6 +20,9 @@ import re
 
 import numpy as np
 
+from .. import reference
+from .. import settings
+
 
 DNA_GENETIC_CODE = dict(
     gct="a", gcc="a", gca="a", gcg="a",
@@ -78,6 +81,24 @@ class Sequence(object):
 
     def __repr__(self):
         return "<Sequence: {}>".format(self.uid)
+
+    @classmethod
+    def from_reference(cls, chrom, start, end=None, length=None):
+        """Create a Sequence object from a given locus."""
+        with reference.Reference() as ref:
+            seq = ref.get_sequence(chrom, start, end, length)
+
+        if length:
+            end = start + length - 1
+        uid = "chr{}:{}-{}".format(chrom, start, end)
+        seq_type = "DNA"
+        info = {
+            "species": "Homo sapiens",
+            "species_ncbi_tax_id": 9606,
+            "build": settings.BUILD
+        }
+
+        return cls(uid, seq, seq_type, info)
 
     def to_fasta(self, line_len=80, full_header=False):
         """Converts the sequence to a valid fasta string.
