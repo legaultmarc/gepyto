@@ -24,8 +24,6 @@ from collections import namedtuple
 from . import settings
 from . import db
 
-from pyfaidx import Fasta
-
 
 class _RemoteChromosome(object):
     def __init__(self, url):
@@ -110,6 +108,8 @@ class Reference(object):
 
     """
     def __init__(self, remote=False):
+        from pyfaidx import Fasta
+
         if not remote:
             try:
                 self.ref = Fasta(settings.REFERENCE_PATH)
@@ -165,14 +165,54 @@ class Reference(object):
             raise TypeError(type_message)
 
         if len(variant.ref) == len(variant.alt) == 1:
-            return check_snp_reference(variant, self.ref, flip)
+            return check_snp_reference(variant, self, flip)
         else:
             # return check_indel_reference(variant, self.ref, flip)
             raise TypeError(type_message)
 
     def get_nucleotide(self, chrom, pos):
         """Get the nucleotide at the given genomic position. """
-        return str(self.ref.get(chrom)[pos - 1].seq)
+        return self.get_sequence(chrom, pos, length=1)
+
+    def get_sequence(self, chrom, start, end=None, length=None):
+        """Get the nucleotide sequence at the given genomic locus.
+
+        :param chrom: The chromosome.
+        :type chrom: str
+
+        :param start: The start position of the locus.
+        :type start: int
+
+        :param end: The end position.
+        :type end: int
+
+        :param length: The length of the sequence to fetch.
+        :type length: int
+
+        Either an ``end`` or a ``length`` parameter has to be provided.
+
+        The ranges are incluse, this means that (start, end) positions will
+        both be included in the sequence.
+
+        """
+        if (end is None and length is None) or (end and length):
+            raise TypeError("get_sequence needs either an 'end' OR 'length' "
+                            "argument.")
+
+        if length:
+            end = start + length - 1
+
+        try:
+            seq = self.ref[chrom][start - 1: end]
+        except KeyError:
+            seq = None
+
+        if seq is None:
+            error_message = "chr{}:{}-{} is an invalid genomic mapping"
+            error_message = error_message.format(chrom, start, end)
+            raise InvalidMapping(error_message)
+
+        return str(seq.seq).upper()
 
     def close(self):
         self.ref.close()
@@ -184,14 +224,30 @@ class Reference(object):
         self.close()
 
 
+class InvalidMapping(Exception):
+    """Exception representing an invalid mapping that we can't fix
+       automatically.
+
+    This can happen if the provided allele is incorrect for non-SNP variants.
+    In this case we don't know if the locus is bad or if the sequence is bad.
+    Since this is ambiguous, we raise this exception for the user to fix.
+
+    """
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
 def check_snp_reference(snp, ref, flip):
     """Utility function to check if a snp has the correct reference allele.
 
     :param snp: The :py:class:`gepyto.structures.variants.SNP` object.
     :type snp: :py:class:`gepyto.structures.variants.SNP`
 
-    :param ref: The ``pyfaidx`` reference object.
-    :type ref: :py:class:`pyfaidx.Fasta`
+    :param ref: The :py:class:`Reference` reference object.
+    :type ref: :py:class:`Reference`
 
     :param flip: A flag. If True, the return value is a variant with alleles
                  flipped if necessary. If False, a bool is returned: True
@@ -206,17 +262,12 @@ def check_snp_reference(snp, ref, flip):
 
     """
     # Get the reference.
-    ref_chrom = ref.get(snp.chrom)
-    if ref_chrom is None:
-        s = "Can't find chromosome '{}' in the reference genome.".format(
-            snp.chrom
+    ref_allele = ref.get_nucleotide(snp.chrom, snp.pos)
+    if ref_allele is None:
+        s = "Can't find locus 'chr{}:{}' in the reference genome.".format(
+            snp.chrom, snp.pos
         )
         raise ValueError(s)
-
-    # Now check the allele at this position. We assome that the SNP positions
-    # are 1-based and that the reference object is 0-based (default with
-    # pyfaidx.
-    ref_allele = ref_chrom[snp.pos - 1].seq.upper()
 
     # Check if it is the correct allele.
     if ref_allele == snp.ref:
@@ -239,28 +290,39 @@ def check_snp_reference(snp, ref, flip):
 
 def check_indel_reference(indel, ref, flip):
     """TODO """
-    # Get the reference.
-    ref_chrom = ref.get(indel.chrom)
-    if ref_chrom is None:
-        s = "Can't find chromosome '{}' in the reference genome.".format(
-            indel.chrom
-        )
-        raise ValueError(s)
 
-    # Insertions:
-    # We will use the VCF format, so if the ref is '-', we will make change
-    # the start (-1) and add the preceding nucleotide.
-    if indel.ref == "-":
-        indel.start -= 1
-        # Remember that we are using 0-based indexing in pyfaidx.
-        prev_nuc = ref_chrom[indel.start - 1]
-        indel.ref = prev_nuc
-        # We also need to prepend this nucleotide in the alt.
-        indel.alt = prev_nuc + indel.alt
+    raise NotImplementedError()
 
-    # For insertions, we also need to check that the end - start makes sense.
+    ref_ok = False
+    if flip:
+        # Insertions:
+        # We will use the VCF format, so if the ref is '-', we will make change
+        # the start (-1) and add the preceding nucleotide.
+        if indel.ref == "-":
+            ref_ok = True
+            indel.pos -= 1
+            indel.ref = ref.get_nucleotide(indel.chrom, indel.pos)
+            # We also need to prepend this nucleotide in the alt.
+            indel.alt = indel.ref + indel.alt
 
-    # Deletions:
-    # The ref should be ok for this case.
+        # Deletions:
+        elif indel.alt == "-":
+            indel.pos -= 1
+            indel.alt = ref.get_nucleotide(indel.chrom, indel.po)
+            indel.ref = indel.alt + indel.ref
+
+    # Verify the reference allele.
+    if not ref_ok:
+        seq = ref.get_sequence(chrom=indel.chrom, start=indel.pos,
+                               length=len(indel.ref))
+        if seq != indel.ref:
+            # The provided sequence is not valid: we can't fix it because it
+            # could be a bad mapping...
+            err = ("chr{}:{} is an invalid locus. Verify that indel '{}' is "
+                   "correct.").format(indel.chrom, indel.pos, indel.ref)
+            if flip:
+                raise InvalidMapping(err)
+            else:
+                return False
 
     return
