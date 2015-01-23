@@ -29,6 +29,7 @@ REFERENCE_PATH = ""
 
 CHROM_REGEX = re.compile(r"([0-9]{1,2}|MT|X|Y)")
 
+
 def _create_default_config(fn):
     # Create the default configuration file.
 
@@ -78,4 +79,3 @@ def _init_settings():
 
 
 _init_settings()
-

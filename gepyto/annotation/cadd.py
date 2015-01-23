@@ -24,6 +24,7 @@ from .. import structures as struct
 
 __all__ = ["cadd_score", ]
 
+
 def cadd_score(variants):
     """Annotate the variants using CADD (cadd.gs.washington.edu).
 
@@ -39,13 +40,13 @@ def cadd_score(variants):
     :py:class:`gepyto.structures.genes.Transcript` object.
 
     The info dictionary contains extra annotations from the CADD output.
-    
+
     The default version is v1.1.
 
     """
 
     # We import here not to break on optional modules.
-    import requests # Install http://docs.python-requests.org/en/latest/
+    import requests  # Install http://docs.python-requests.org/en/latest/
 
     # We need to send a form with the following information:
     # file: a vcf file.
@@ -95,7 +96,7 @@ def cadd_score(variants):
             download_url = "http://cadd.gs.washington.edu/static/finished/{}"
             download_url = download_url.format(dld_fn)
             success = False
-            for i in range(24): # Try, wait for 2 minutes, retry.
+            for i in range(24):  # Try, wait for 2 minutes, retry.
                 time.sleep(2 * 60)
 
                 r = requests.get(download_url, stream=True)
@@ -127,19 +128,19 @@ def cadd_score(variants):
 
     else:
         raise Exception("Request to CADD Failed (HTTP {}).".format(
-            r.status_code 
+            r.status_code
         ))
 
 
 def _parse_annotation(cadd_output):
     """Takes a file object containing the output from CADD and parses it.
 
-    :param cadd_output: An open file object representing the output from the 
+    :param cadd_output: An open file object representing the output from the
                         CADD website.
     :type cadd_output: Mosty likely :py:class:`gzip.GzipFile`
 
-    :returns: A list of annotation tuples of the form (``Transript``, 
-              ``Variant``, ``C score``, ``info``). If the annotation is for 
+    :returns: A list of annotation tuples of the form (``Transript``,
+              ``Variant``, ``C score``, ``info``). If the annotation is for
               an Ensembl regulatory feature, the ID (ENSR) replaces the
               ``Transcript`` object.
     :rtype: list
@@ -238,4 +239,3 @@ def _parse_annotation(cadd_output):
         )
 
     return annotations
-

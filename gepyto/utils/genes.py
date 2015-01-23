@@ -24,7 +24,8 @@ from ..structures.genes import _parse_gene
 
 
 def ensembl_genes_in_region(region, bare=False, build=BUILD):
-    """Queries a genome region of the form chr3:123-456 for genes using Ensembl API.
+    """Queries a genome region of the form chr3:123-456 for genes using Ensembl
+       API.
 
     :param region: The region to query.
     :type region: str
@@ -82,4 +83,3 @@ def ensembl_genes_in_region(region, bare=False, build=BUILD):
         logging.warning("No gene detected in region {}.".format(region))
 
     return genes
-

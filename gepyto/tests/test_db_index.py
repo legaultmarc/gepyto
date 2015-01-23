@@ -19,6 +19,7 @@ import os
 
 from .. import db
 
+
 class TestIndex(unittest.TestCase):
     """Tests the db.index module.
 
@@ -30,11 +31,12 @@ class TestIndex(unittest.TestCase):
     def setUpClass(cls):
         cls.fn = ".test_index_gepyto.txt"
         cls.f = open(cls.fn, "w")
-        
-        cls.positions = [("chr1", 1), (1, 11), (1, 123), (2, 1), (2, 11),
-            (2, 11), (2, 11), (2, 11), (2, 21), (2, 34), (3, 1), (3, 2),
-            (3, 3), (3, 4), (3, 4), (3, 5), ("chr3", 6), (3, 7), (3, 8),
-            (3, 9), (4, 1), (5, 2), ("X", 3), ("Y", 2),
+
+        cls.positions = [
+            ("chr1", 1), (1, 11), (1, 123), (2, 1), (2, 11), (2, 11), (2, 11),
+            (2, 11), (2, 21), (2, 34), (3, 1), (3, 2), (3, 3), (3, 4), (3, 4),
+            (3, 5), ("chr3", 6), (3, 7), (3, 8), (3, 9), (4, 1), (5, 2),
+            ("X", 3), ("Y", 2),
         ]
         for chrom, pos in cls.positions:
             # Generate a random third column.
@@ -88,5 +90,3 @@ class TestIndex(unittest.TestCase):
             self.assertFalse(
                 db.index.goto(TestIndex.f, self.idx_info, chrom, pos)
             )
-
-

@@ -1,7 +1,7 @@
 
 # Utilities to interact with the Ensembl database.
-# This module contains code strictly to interact with Ensembl and not to 
-# interpret the response or the underlying biology. 
+# This module contains code strictly to interact with Ensembl and not to
+# interpret the response or the underlying biology.
 
 # This file is part of gepyto.
 #
@@ -34,6 +34,7 @@ __all__ = ["query_ensembl", ]
 
 LAST_QUERY = 0
 
+
 def query_ensembl(url):
     """Query the given (Ensembl rest api) url and get a json reponse.
 
@@ -54,24 +55,24 @@ def query_ensembl(url):
             response = json.loads(stream.read().decode())
             response_info = stream.info()
 
-            limit = int(response_info["X-RateLimit-Limit"]) # Allowed / h
-            reset = int(response_info["X-RateLimit-Reset"]) # Time to reset
+            limit = int(response_info["X-RateLimit-Limit"])  # Allowed / h
+            reset = int(response_info["X-RateLimit-Reset"])  # Time to reset
             period = int(response_info["X-RateLimit-Period"])
             remaining = int(response_info["X-RateLimit-Remaining"])
 
             # Max time for request (s / request) to not exceed quota:
             max_t = 1.0 * reset / remaining
             if delta_t < max_t:
-                time.sleep(max_t - delta_t + 0.5) # We add a buffer of 0.5s.
+                time.sleep(max_t - delta_t + 0.5)  # We add a buffer of 0.5s.
 
     except HTTPError as e:
-        logging.warning("Request '{}' failed.".format(url)) 
-        logging.warning("[{}] {}".format(e.code, e.reason)) 
+        logging.warning("Request '{}' failed.".format(url))
+        logging.warning("[{}] {}".format(e.code, e.reason))
         # If we busted we wait what they ask us to wait.
         if e.code == 429:
             sleep_time = float(e.info().getheader("Retry-After"))
             logging.warning("Waiting {}s before next Ensembl request (at "
-                         "the server's request).".format(sleep_time))
+                            "the server's request).".format(sleep_time))
             time.sleep(sleep_time)
 
             return query_ensembl(url)
@@ -93,5 +94,3 @@ def mysql_connect(ensembl_version, build):
         ensver=ensembl_version,
         build=build,
     )
-
-

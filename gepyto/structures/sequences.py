@@ -20,6 +20,7 @@ import re
 
 import numpy as np
 
+
 DNA_GENETIC_CODE = dict(
     gct="a", gcc="a", gca="a", gcg="a",
     cgt="r", cgc="r", cga="r", cgg="r", aga="r", agg="r",
@@ -35,6 +36,7 @@ DNA_GENETIC_CODE = dict(
     tgg="w", tat="y", tac="y",
     gtt="v", gtc="v", gta="v", gtg="v",
 )
+
 
 class Sequence(object):
     """Object to represent biological sequences.
@@ -66,7 +68,7 @@ class Sequence(object):
     def __init__(self, uid, s, seq_type, info=None):
         if seq_type not in Sequence.types:
             raise ValueError("Invalid sequence type {}. Allowed types are: "
-                "{}".format(seq_type, list(Sequence.types)))
+                             "{}".format(seq_type, list(Sequence.types)))
 
         self.uid = uid
         self.seq = s.lower()
@@ -192,7 +194,7 @@ class Sequence(object):
         s = self.seq
         if k > len(s) - 2:
             raise Exception("Sequence too short to compute BBC with "
-                "k={}".format(k))
+                            "k={}".format(k))
 
         if alphabet is None:
             alphabet = set(s)
@@ -207,7 +209,7 @@ class Sequence(object):
         p /= np.sum(p)
         p.shape = (1, L)
 
-        # Now we need to compute 
+        # Now we need to compute
         bbc = np.zeros((L, L))
         for l in range(1, k + 2):
             # We need to compute $p_{ij}(l)$ representing the probability of

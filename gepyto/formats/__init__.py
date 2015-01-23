@@ -14,4 +14,3 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 from . import seqxml
 from . import impute2
-

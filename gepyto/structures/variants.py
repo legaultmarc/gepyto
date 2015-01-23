@@ -29,6 +29,7 @@ from . import genes
 
 __all__ = ["SNP", "Indel", "Variant"]
 
+
 class Variant(object):
     """Base class for genome Variants.
 
@@ -39,7 +40,7 @@ class Variant(object):
 
         It will initalize the object by assuming one of the following
         scenarios:
-        
+
         1) The position arguments (*args) correspond to the elements of the
            _PARAMETERS argument which is overriden by the subclasses when the
            parent constructor is called.
@@ -74,9 +75,7 @@ class Variant(object):
                 raise Exception("Missing parameter {}.".format(p))
 
     def vcf_header(self):
-        """Returns a valid VCF header line. 
-        
-        """
+        """Returns a valid VCF header line. """
         return "\t".join([
             "#CHROM",
             "POS",
@@ -138,7 +137,7 @@ class Variant(object):
         :param rs: The rs number describing the variant of interest.
         :type rs: str
 
-        :param build: The genome build (either GRCh37 or GRCh38, default is 
+        :param build: The genome build (either GRCh37 or GRCh38, default is
                       defined in the settings.
         :type build: str
 
@@ -161,7 +160,7 @@ class Variant(object):
 
         if response is None:
             return response
-        
+
         for mapping in response["mappings"]:
             if mapping["assembly_name"] == build:
                 # This is a SNP
@@ -192,7 +191,7 @@ class Indel(Variant):
     everything to comply with the VCF format.
 
     The latter represents deletions by using the preceding nucleotide for the
-    reference. 
+    reference.
 
     _e.g._ If the genomic sequence is AAGAA -> AAAA (deletion of the G)
     the indel will be represented as follows:
@@ -214,7 +213,7 @@ class Indel(Variant):
 
     def __init__(self, *args, **kwargs):
         _PARAMETERS = [
-            "chrom", 
+            "chrom",
             "pos",
             "rs",
             "ref",
@@ -237,7 +236,7 @@ class Indel(Variant):
         except AssertionError as e:
             logging.critical(
                 "Assertion failed constructing the Indel object. \n"
-                "Parameters were: \n" 
+                "Parameters were: \n"
                 "\tchrom: {chrom} ({chrom_type})\n"
                 "\tpos: {pos} ({pos_type})\n"
                 "\trs: {rs} ({rs_type})\n"
@@ -274,8 +273,8 @@ class Indel(Variant):
         with Reference() as reference:
             for alt in list(alts):
                 if ref == "-":
-                    # This is an insertion. We need to fetch the 
-                    # previous nucleotide and append it.
+                    # This is an insertion. We need to fetch the previous
+                    # nucleotide and append it.
                     pos -= 1
                     n = reference.get_nucleotide(chrom, pos)
                     ref = n
@@ -286,15 +285,15 @@ class Indel(Variant):
                     n = reference.get_nucleotide(chrom, pos)
                     alt = n
                     ref = n + ref
-                    
+
                 indel = cls(chrom, pos, rs, ref, alt)
                 indels.append(indel)
 
         return indels
 
     def get_position(self, zero_based=False):
-        """Returns an indel in the standard chrXX:POS notation. 
-        
+        """Returns an indel in the standard chrXX:POS notation.
+
         :param zero_based: Indicates if zero based coordinates should be used.
                            This is False by default (1 based coordinates).
 
@@ -304,7 +303,7 @@ class Indel(Variant):
 
     def vcf_line(self):
         """Returns a line describing the current variant as expected by the VCF
-           format. 
+           format.
 
         """
         return "\t".join(str(i) for i in [
@@ -313,9 +312,9 @@ class Indel(Variant):
             self.rs if self.rs else ".",
             self.ref,
             self.alt,
-            ".", # No Quality
-            "PASS", # PASS for filter
-            ".", # Info
+            ".",  # No Quality
+            "PASS",  # PASS for filter
+            ".",  # Info
         ])
 
     def __repr__(self):
@@ -347,15 +346,15 @@ class Indel(Variant):
 
 
 class SNP(Variant):
-    """Class representing a Single Nucleotide Polymorphism (SNP). 
+    """Class representing a Single Nucleotide Polymorphism (SNP).
 
-    Instances can be created in two ways: either by providing ordered fields: 
+    Instances can be created in two ways: either by providing ordered fields:
     ``chrom, pos, rs, ref, alt`` or by using named parameters.
 
     """
     def __init__(self, *args, **kwargs):
         _PARAMETERS = [
-            "chrom", 
+            "chrom",
             "pos",
             "rs",
             "ref",
@@ -376,7 +375,7 @@ class SNP(Variant):
         except AssertionError as e:
             logging.critical(
                 "Assertion failed constructing the SNP object. \n"
-                "Parameters were: \n" 
+                "Parameters were: \n"
                 "\tchrom: {chrom} ({chrom_type})\n"
                 "\tpos: {pos} ({pos_type})\n"
                 "\trs: {rs} ({rs_type})\n"
@@ -397,14 +396,14 @@ class SNP(Variant):
 
         :param zero_based: Indicates if zero based coordinates should be used.
                            This is False by default (1 based coordinates).
-        
+
         """
         pos = self.pos - 1 if zero_based else self.pos
         return "chr{}:{}".format(self.chrom, pos)
 
     def vcf_line(self):
         """Returns a line describing the current variant as expected by the VCF
-        format. 
+        format.
 
         """
         return "\t".join(str(i) for i in [
@@ -413,9 +412,9 @@ class SNP(Variant):
             self.rs if self.rs else ".",
             self.ref,
             self.alt,
-            ".", # No Quality
-            "PASS", # PASS for filter
-            ".", # Info
+            ".",  # No Quality
+            "PASS",  # PASS for filter
+            ".",  # Info
         ])
 
     @classmethod
@@ -431,8 +430,8 @@ class SNP(Variant):
 
     @classmethod
     def from_str(cls, s, rs=None):
-        """Parses a variant object from a str of the form chrXX:YYYY_R/A. 
-        
+        """Parses a variant object from a str of the form chrXX:YYYY_R/A.
+
         :param s: The string to parse the SNP from (Format: chrXX:YYY_R/A).
         :param rs: An optional parameter specifying the rs number.
 
@@ -470,5 +469,5 @@ class SNP(Variant):
         )
 
     def __repr__(self):
-        return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref, self.alt)
-
+        return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref,
+                                       self.alt)

@@ -1,6 +1,6 @@
 
 # Utilities to interact with RegulomeDB.
-# This module contains code strictly to interact with RegulomeDB and not to 
+# This module contains code strictly to interact with RegulomeDB and not to
 # interpret the response or the underlying biology.
 # RegulomeDB: http://regulome.stanford.edu
 
@@ -85,7 +85,7 @@ def query_regulomedb(query, build="GRCh37"):
     try:
         response = urlopen(req).read().decode("utf-8")
     except HTTPError:
-        logging.warning("Request failed for query '{}'.".format(data)) 
+        logging.warning("Request failed for query '{}'.".format(data))
         return []
 
     # Getting the sid value
@@ -144,9 +144,8 @@ def _parse_regulomedb(regulome_output):
             "pos": int(row[header["coordinate"]]),
             "rs": row[header["rsid"]],
             "hits": [re.split(r"\|", i)
-                                for i in re.split(", ", row[header["hits"]])],
+                     for i in re.split(", ", row[header["hits"]])],
             "score": row[header["score"]],
         })
 
     return result
-

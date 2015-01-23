@@ -16,10 +16,11 @@ import unittest
 
 from .. import structures as struct
 
+
 class TestVariant(unittest.TestCase):
     """Tests the struct.variants module.
 
-    We compare the initialized values with what is expected from manual 
+    We compare the initialized values with what is expected from manual
     queries in the database for the ensembl init. function.
 
     If this changes, or if Ensembl drops GRCh37 support. These will have to
@@ -36,9 +37,9 @@ class TestVariant(unittest.TestCase):
         # Simple variations
         self.snp = struct.variants.SNP(chrom="19", pos=55663495,
                                        rs=self.snp_rs, ref="C", alt="T")
-        self.indel  = struct.variants.Indel(chrom="19", pos=55663539,
-                                            rs=self.indel_rs,
-                                            ref="TTC", alt="T")
+        self.indel = struct.variants.Indel(chrom="19", pos=55663539,
+                                           rs=self.indel_rs,
+                                           ref="TTC", alt="T")
 
         # Insertions
         self.insertion_rs = "rs11273285"
@@ -81,20 +82,23 @@ class TestVariant(unittest.TestCase):
         self.assertEqual(self.indel.get_position(), "chr19:55663539")
 
     def test_variant_in(self):
-        snp_g_in = struct.genes.Gene(build="GRCh37", chrom="19", 
-            start=55653495, end=55673495, xrefs={}, strand=1, transcripts=[])
+        snp_g_in = struct.genes.Gene(build="GRCh37", chrom="19",
+                                     start=55653495, end=55673495, xrefs={},
+                                     strand=1, transcripts=[])
 
         self.assertTrue(self.snp.in_gene(snp_g_in))
         self.assertTrue(self.indel.in_gene(snp_g_in))
 
-        snp_g_out = struct.genes.Gene(build="GRCh37", chrom="19", 
-            start=15653495, end=15673495, xrefs={}, strand=1, transcripts=[])
+        snp_g_out = struct.genes.Gene(build="GRCh37", chrom="19",
+                                      start=15653495, end=15673495, xrefs={},
+                                      strand=1, transcripts=[])
 
         self.assertFalse(self.snp.in_gene(snp_g_out))
         self.assertFalse(self.indel.in_gene(snp_g_out))
 
-        snp_g_out2 = struct.genes.Gene(build="GRCh37", chrom="18", 
-            start=55653495, end=55673495, xrefs={}, strand=1, transcripts=[])
+        snp_g_out2 = struct.genes.Gene(build="GRCh37", chrom="18",
+                                       start=55653495, end=55673495, xrefs={},
+                                       strand=1, transcripts=[])
 
         self.assertFalse(self.snp.in_gene(snp_g_out2))
         self.assertFalse(self.indel.in_gene(snp_g_out2))
@@ -109,13 +113,11 @@ class TestGene(unittest.TestCase):
         # Gene is BRCA2
         self.gene_37 = struct.genes.Gene.factory_ensembl_id("ENSG00000139618")
         self.gene_38 = struct.genes.Gene.factory_ensembl_id(
-            "ENSG00000139618", 
+            "ENSG00000139618",
             build="GRCh38"
         )
 
     def test_factory_ensembl_id(self):
-
-
         # Chrom
         self.assertEqual(self.gene_37.chrom, "13")
         self.assertEqual(self.gene_38.chrom, "13")
@@ -172,4 +174,3 @@ class TestSequence(unittest.TestCase):
 
         self.assertEqual(dna_seq.translate().seq, pro_seq.seq)
         self.assertEqual(rna_seq.translate().seq, pro_seq.seq)
-

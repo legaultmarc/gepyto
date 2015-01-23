@@ -41,7 +41,7 @@ def compare_dosages(self, d1, d2):
             self.assertEqual(info1[k], info2[k])
         else:
             self.assertAlmostEqual(info1[k], info2[k])
-    
+
     if v1.dtype is np.dtype(float):
         # Checking the dosage values (nan != nan in numpy)
         v1_nan = np.isnan(v1)
@@ -107,14 +107,14 @@ class TestImpute2Class(unittest.TestCase):
         )
 
         self.dosage_snp1 = (
-            np.array([0., 0.002, 1.003]), 
+            np.array([0., 0.002, 1.003]),
             {"minor": "G", "major": "A", "maf": 1 / 6.0, "name": "rs12345",
              "chrom": "1", "pos": 1231415, }
         )
 
         self.dosage_snp2 = (
-            np.array([0.130, 0.099, 2]), 
-            {"minor": "C", "major": "T", "maf": 2 / 6.0, "name": "rs23456", 
+            np.array([0.130, 0.099, 2]),
+            {"minor": "C", "major": "T", "maf": 2 / 6.0, "name": "rs23456",
              "chrom": "1", "pos": 3214569}
         )
 

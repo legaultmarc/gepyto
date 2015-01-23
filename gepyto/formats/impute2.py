@@ -104,7 +104,7 @@ class Impute2File(object):
                 else:
                     self._file.close()
                     raise TypeError("__init__() got an unexpected keyword "
-                        "argument '{}'".format(keyword))
+                                    "argument '{}'".format(keyword))
 
         elif self._mode is HARD_CALL:
             # Parse kwargs that can be passed to the _compute_hard_calls
@@ -121,7 +121,7 @@ class Impute2File(object):
             if len(kwargs) > 0:
                 self._file.close()
                 raise TypeError("__init__() got an unexpected keyword "
-                        "argument '{}'".format(kwargs.keys()[0]))
+                                "argument '{}'".format(kwargs.keys()[0]))
 
     def as_matrix(self):
         """Creates a numpy dosage matrix from this file.
@@ -132,13 +132,13 @@ class Impute2File(object):
         :type: tuple
 
         .. warning::
-        
+
             This will attempt to load the whole file in memory.
 
         """
         prev_pos = self._file.tell()
         self._file.seek(0)
-        
+
         prev_mode = self._mode
         self._mode = DOSAGE
 
@@ -149,8 +149,8 @@ class Impute2File(object):
             snp_vector_list.append(v)
             snp_info_list.append([info[k] for k in information_fields])
 
-        m = np.array(snp_vector_list) # snp x sample
-        m = m.T # We transpose to get sample x snp matrix (standard for stats)
+        m = np.array(snp_vector_list)  # snp x sample
+        m = m.T  # We transpose to get sample x snp matrix (standard for stats)
 
         # Make the information df.
         df = pd.DataFrame(snp_info_list, columns=information_fields)
@@ -200,7 +200,7 @@ class Impute2File(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
-        
+
     def close(self):
         self._file.close()
 
@@ -289,7 +289,7 @@ def _read_impute2_line(line):
     :returns: A namedtuple with the name of the variant, chromosome, position,
               allele1, allele2 and probability matrix.
 
-    The matrix of shape ``samples x 3`` represents the probability of the 
+    The matrix of shape ``samples x 3`` represents the probability of the
     the following genotypes ``(aa, ab, bb)``.
 
     """

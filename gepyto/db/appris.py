@@ -1,7 +1,7 @@
 # Module to get principal transcripts from the appris database.
 # appris annotates transcripts and provides a main isoform for proteins.
 # http://appris.bioinfo.cnio.es/
-# The data included in this module was fetched from the APPRIS website on 
+# The data included in this module was fetched from the APPRIS website on
 # 2014-10-30.
 # URL: http://appris.bioinfo.cnio.es/download/data/homo_sapiens/appris_data.principal.txt
 
@@ -27,6 +27,7 @@ from pkg_resources import resource_filename
 
 
 APPRIS_CUR = None
+
 
 def _load_appris():
     """Load the APPRIS database in memory as a sqlite3 database.
@@ -110,17 +111,18 @@ def get_category_for_transcript(enst):
 
 
 def get_main_transcripts(ensg):
-    """Gets the main Ensembl transcript id for the provided gene based on the APPRIS annotation.
+    """Gets the main Ensembl transcript id for the provided gene based on the
+       APPRIS annotation.
 
     :param ensg: The Ensembl gene number (ENSG000000).
     :param ensg: str
 
     :returns: The "main" transcrit (ENST). If there is an `appris_principal`
               annotation, this will be returned. If it is not the case, the
-              order of priority is the following:  
+              order of priority is the following:
               `appris_candidate_longest_ccds`, `appris_candidate_ccds`,
               `appris_candidate_longest_seq`, `appris_candidate`.
-    :rtype: str 
+    :rtype: str
 
     """
 
@@ -151,4 +153,3 @@ def get_main_transcripts(ensg):
             top_transcripts.append(enst)
 
     return enst
-

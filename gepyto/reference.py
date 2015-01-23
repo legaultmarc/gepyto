@@ -46,7 +46,7 @@ class _RemoteChromosome(object):
         )
 
         # Note the "comp" field is ignored (see pyfaidx.Sequence).
-        seq_obj = namedtuple("Sequence", ["name", "seq", "start", "end",])
+        seq_obj = namedtuple("Sequence", ["name", "seq", "start", "end"])
         return seq_obj(res["id"], res["seq"], start, end)
 
 
@@ -77,7 +77,7 @@ class _RemoteReference(object):
         if not re.match(settings.CHROM_REGEX, key):
             raise KeyError("Invalid chromosome '{}'.".format(key))
 
-        url = (self.url.format(chrom=key)+
+        url = (self.url.format(chrom=key) +
                ":{start}-{end}?content-type=application/json")
 
         return _RemoteChromosome(url)
@@ -94,7 +94,7 @@ class _RemoteReference(object):
 
 class Reference(object):
     """Interface to the human genome reference file.
-    
+
     This class uses ``pyfaidx`` to parse the genome reference file referenced
     by ``settings.REFERENCE_PATH``.
 
@@ -158,7 +158,7 @@ class Reference(object):
         type_message = ("Unsupported argument to check_variant_reference. "
                         "A SNP object has to be provided.")
 
-        if not (hasattr(variant, "chrom") and 
+        if not (hasattr(variant, "chrom") and
                 hasattr(variant, "pos") and
                 hasattr(variant, "ref") and
                 hasattr(variant, "alt")):
@@ -233,7 +233,7 @@ def check_snp_reference(snp, ref, flip):
 
     # The correct allele is nowhere to be found.
     raise ValueError("Invalid alleles for variant {}. Reference is {}".format(
-        snp, ref_allele 
+        snp, ref_allele
     ))
 
 

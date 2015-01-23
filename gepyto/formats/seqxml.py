@@ -25,14 +25,15 @@ from ..structures.sequences import Sequence
 
 
 class SeqXML(object):
-    """Parses the SeqXML format representing sequence data. 
+    """Parses the SeqXML format representing sequence data.
 
     :param fn: The filename of the SeqXML file. The format description is
-               available at `orthoxml.org <http://seqxml.org/0.4/seqxml_doc_v0.4.html>`_
+               available at
+               `orthoxml.org <http://seqxml.org/0.4/seqxml_doc_v0.4.html>`_
                (visited Nov. 2014).
     :type fn: str
 
-    The returned object will have a list of entries which are 
+    The returned object will have a list of entries which are
     :py:class:`Sequence` objects.
 
     """
@@ -53,7 +54,7 @@ class SeqXML(object):
 
         self.entries = []
         self.id_index = {}
-        
+
         for entry in self.root:
             # Mandatory fields
             uid = entry.attrib.get("id")
@@ -91,7 +92,7 @@ class SeqXML(object):
             self.id_index[entry.uid] = entry
 
     def get_seq(self, uid):
-        """Get a sequence from it's unique identifier. 
+        """Get a sequence from it's unique identifier.
 
         :param uid: The sequence id.
         :type uid: str
@@ -102,5 +103,3 @@ class SeqXML(object):
             return None
         else:
             return self.id_index[uid]
-
-

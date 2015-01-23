@@ -51,7 +51,7 @@ class Gene(object):
         - xrefs: A dict of id mappings to multiple databases.
         - transcripts: A list of Transcript objects.
 
-    Optional 
+    Optional
 
         - symbol: An HGNC symbol.
         - desc: A short description.
@@ -133,7 +133,7 @@ class Gene(object):
         given object with the gene.
 
         You can use the syntax: `rs123 in gene`.
-        Where the `rs123` is a SNP object (or other) and `gene` is a `Gene` 
+        Where the `rs123` is a SNP object (or other) and `gene` is a `Gene`
         object.
 
         """
@@ -144,9 +144,9 @@ class Gene(object):
 
         if not hasattr(o, "chrom"):
             raise TypeError("Testing overlap with gene requires a `chrom` "
-                "attribute.")
+                            "attribute.")
 
-        ret =  self.start < start and self.end > end
+        ret = self.start < start and self.end > end
         ret = ret and str(self.chrom) == str(o.chrom)
         return ret
 
@@ -171,7 +171,7 @@ class Gene(object):
     def _homology(self, homo_type="orthologs"):
         """Retrieve homology information from Ensembl.
 
-        :param homo_type: The type of homologuous sequence to query. Can be 
+        :param homo_type: The type of homologuous sequence to query. Can be
                           either 'orthologs' or 'paralogs'.
         :type homo_type: str
 
@@ -183,11 +183,12 @@ class Gene(object):
         }
         if homo_type not in homo_types.keys():
             raise Exception("Invalid homology type. Valid parameters are: "
-                "{}".foramt(homo_types.keys()))
+                            "{}".foramt(homo_types.keys()))
 
         if "ensembl_id" not in self.xrefs:
             raise Exception("Can't retrieve homology information from Ensembl "
-                "without an 'ensembl_id' in the cross references (xrefs).")
+                            "without an 'ensembl_id' in the cross references "
+                            "(xrefs).")
 
         url = ("http://rest.ensembl.org/homology/id/{}?"
                "content-type=application/json&"
@@ -233,12 +234,10 @@ class Gene(object):
 
         if ensembl_id is None:
             raise Exception("Could not initialize gene from symbol {} because "
-                "the Ensembl ID (ENSG) could not be found.".format(
-                    symbol 
-                ))
+                            "the Ensembl ID (ENSG) could not be "
+                            "found.".format(symbol))
 
         return Gene.factory_ensembl_id(ensembl_id, xrefs=xrefs, build=build)
-
 
     @classmethod
     def factory_ensembl_id(cls, ensembl_id, xrefs=None, build=settings.BUILD):
@@ -303,7 +302,8 @@ class Gene(object):
 
     @classmethod
     def get_xrefs_from_ensembl_id(cls, ensembl_id, build=settings.BUILD):
-        """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a gene ID for other databases.
+        """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a
+           gene ID for other databases.
 
         :param ensembl_id: The gene Ensembl ID to query.
         :type ensembl_id: str
@@ -316,10 +316,10 @@ class Gene(object):
         """
         return Gene.get_xrefs("ensembl_gene_id", ensembl_id)
 
-
     @classmethod
     def get_xrefs_from_symbol(cls, symbol, build=settings.BUILD):
-        """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a gene ID for other databases.
+        """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a
+           gene ID for other databases.
 
         :param symbol: The gene symbol to query.
         :type symbol: str
@@ -332,10 +332,10 @@ class Gene(object):
         """
         return Gene.get_xrefs("symbol", symbol)
 
-
     @classmethod
     def get_xrefs(cls, field, query, build=settings.BUILD):
-        """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a gene ID for other databases.
+        """Fetches the HGNC (HUGO Gene Nomenclature Commitee) service to get a
+           gene ID for other databases.
 
         :param field: A searchable fields.
         :type field: str
@@ -368,7 +368,8 @@ class Gene(object):
 
             # Use the HGNC Fetch.
             url = "http://rest.genenames.org/fetch/{field}/{query}"
-            req = Request(url.format(field=field, query=query), headers=headers)
+            req = Request(url.format(field=field, query=query),
+                          headers=headers)
             with contextlib.closing(urlopen(req)) as stream:
                 res = json.loads(stream.read().decode())
 
@@ -394,7 +395,8 @@ class Gene(object):
                 return id_dict
             else:
                 raise Exception("No gene returned by HGNC fetch on "
-                    "{field} {query}.".format(field=field, query=query))
+                                "{field} {query}.".format(field=field,
+                                                          query=query))
 
         elif field == "ensembl_gene_id":
             # Get from Ensembl
@@ -434,7 +436,7 @@ class Transcript(object):
         - start and end: The genomic positions for the gene.
         - enst: The corresponding Ensembl transcript id.
 
-    Optional 
+    Optional
 
         - appris_cat: The APPRIS category.
         - parent: The corresponding Gene object.
@@ -494,8 +496,7 @@ class Transcript(object):
         seq_types = ("genomic", "cds", "cdna", "protein")
         if seq_type not in seq_types:
             raise Exception("Invalid sequence type ({}). Known types are: "
-                "{}".format(", ".format(seq_types))
-            )
+                            "{}".format(", ".format(seq_types)))
 
         url = ("http://rest.ensembl.org/sequence/id/{}?"
                "content-type=application/json&"
@@ -621,4 +622,3 @@ def _parse_exon(o):
     """
     assert o["feature_type"] == "exon"
     return (o["start"], o["end"])
-

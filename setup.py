@@ -29,4 +29,3 @@ setup(
     test_suite="gepyto.tests.test_suite",
     install_requires=["numpy >= 1.8.1", "requests >= 2.4.3", "pandas >= 0.15"],
 )
-

@@ -42,7 +42,7 @@ def plot_genes_in_region(figure, axe, region, build):
     """
     # Fetching the gene in the region
     logging.info("Fetching genes in region {} ({})".format(region, build))
-    genes  = ensembl_genes_in_region(region, bare=True, build=build)
+    genes = ensembl_genes_in_region(region, bare=True, build=build)
     logging.debug("Found {:,d} genes".format(len(genes)))
 
     # Getting the start and end positions
@@ -82,7 +82,6 @@ def plot_genes_in_region(figure, axe, region, build):
         # Checking the ending position of the gene
         if gene_end > end:
             gene_end = end
-            
 
         # Updating the gene label
         gene_label = None
@@ -101,7 +100,6 @@ def plot_genes_in_region(figure, axe, region, build):
         # Trying to put the label there
         t = axe.text((gene_start + gene_end) / 2, j - 0.15, gene_label,
                      fontsize=5, ha="center", va="top")
-
 
         # Is there a bbox in this location?
         if j in last_t_obj:
@@ -137,4 +135,3 @@ def plot_genes_in_region(figure, axe, region, build):
         # Saving the last position (last end and bbox)
         last_end[j] = gene_end + 3e-3
         last_t_obj[j] = t
-

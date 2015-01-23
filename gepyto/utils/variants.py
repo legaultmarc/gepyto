@@ -25,7 +25,8 @@ from ..db.ensembl import query_ensembl
 
 
 def ensembl_variants_in_region(region, build=BUILD):
-    """Queries a genome region of the form chr3:123-456 for variants using Ensembl API.
+    """Queries a genome region of the form chr3:123-456 for variants using
+       Ensembl API.
 
     :param region: The region to query.
     :type region: str
@@ -97,4 +98,3 @@ def ensembl_variants_in_region(region, build=BUILD):
         logging.warning("No SNP detected in region {}.".format(region))
 
     return variants
-

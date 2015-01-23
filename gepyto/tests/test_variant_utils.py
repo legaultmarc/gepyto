@@ -24,7 +24,7 @@ class TestVariantUtils(unittest.TestCase):
     def setUp(self):
         self.region = "chr19:55663495-55663541"
         self.snp = SNP("19", 55663495, "rs111715315", "C", "T")
-        self.indel  = Indel("19", 55663539, "rs72301544", "TTC", "T")
+        self.indel1 = Indel("19", 55663539, "rs72301544", "TTC", "T")
         self.indel2 = Indel("19", 55663540, "rs56007758", "TCT", "T")
 
     def test_ensembl_variant_in_region(self):
@@ -40,13 +40,12 @@ class TestVariantUtils(unittest.TestCase):
         Also, this test only covers the build GRCh37.
 
         """
-        
+
         variants = utils.variants.ensembl_variants_in_region(self.region)
 
         self.assertEqual(variants[0], self.snp)
-        self.assertEqual(variants[1], self.indel)
+        self.assertEqual(variants[1], self.indel1)
         self.assertEqual(variants[2], self.indel2)
 
 if __name__ == '__main__':
     unittest.main()
-
