@@ -228,8 +228,8 @@ class Indel(Variant):
         super(Indel, self).__init__(*args, **kwargs)
 
         self.pos = int(self.pos)
-        self.ref = self.ref.upper()
-        self.alt = self.alt.upper()
+        self.ref = self.ref.lower()
+        self.alt = self.alt.lower()
         try:
             assert re.match(settings.CHROM_REGEX, str(self.chrom))
             assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
@@ -358,8 +358,8 @@ class SNP(Variant):
 
         # Make sure everthing has the right type.
         self.pos = int(self.pos)
-        self.ref = self.ref.upper()
-        self.alt = self.alt.upper()
+        self.ref = self.ref.lower()
+        self.alt = self.alt.lower()
         try:
             assert re.match(settings.CHROM_REGEX, str(self.chrom))
             assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
