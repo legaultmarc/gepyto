@@ -22,7 +22,7 @@ import sys
 import traceback
 
 from .. import settings
-from ..reference import Reference
+from ..reference import Reference, check_indel_reference
 from ..db import query_ensembl
 from . import genes
 
@@ -212,6 +212,11 @@ class Indel(Variant):
     """
 
     def __init__(self, *args, **kwargs):
+        if "skip_allele_check" in kwargs:
+            skip_allele_check = kwargs.pop("skip_allele_check")
+        else:
+            skip_allele_check = False
+
         _PARAMETERS = [
             "chrom",
             "pos",
@@ -231,8 +236,9 @@ class Indel(Variant):
             assert type(self.pos) is int
             assert type(self.ref) is str
             assert type(self.alt) is str
-            assert "-" not in self.ref
-            assert "-" not in self.alt
+            if not skip_allele_check:
+                assert "-" not in self.ref
+                assert "-" not in self.alt
         except AssertionError as e:
             logging.critical(
                 "Assertion failed constructing the Indel object. \n"
@@ -272,21 +278,8 @@ class Indel(Variant):
         indels = []
         with Reference() as reference:
             for alt in list(alts):
-                if ref == "-":
-                    # This is an insertion. We need to fetch the previous
-                    # nucleotide and append it.
-                    pos -= 1
-                    n = reference.get_nucleotide(chrom, pos)
-                    ref = n
-                    alt = n + alt
-
-                elif alt == "-":
-                    pos -= 1
-                    n = reference.get_nucleotide(chrom, pos)
-                    alt = n
-                    ref = n + ref
-
-                indel = cls(chrom, pos, rs, ref, alt)
+                indel = cls(chrom, pos, rs, ref, alt, skip_allele_check=True)
+                indel = check_indel_reference(indel, reference, True)
                 indels.append(indel)
 
         return indels

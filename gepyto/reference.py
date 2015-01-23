@@ -55,6 +55,11 @@ class _RemoteReference(object):
     It should be able to transparently replace the :py:class:`pyfaidx.Fasta`
     class.
 
+    .. note::
+
+        This is a fairly low level class. Users should be able to fill most
+        of their needs using the :py:class:`Reference` object.
+
     """
     def __init__(self, ref):
         if ref not in ("GRCh37", "GRCh38"):
@@ -288,13 +293,27 @@ def check_snp_reference(snp, ref, flip):
     ))
 
 
-def check_indel_reference(indel, ref, flip):
-    """TODO """
+def check_indel_reference(indel, ref, fix):
+    """Check and/or fix alleles for Indels.
 
-    raise NotImplementedError()
+    :param ref: A reference object.
+    :type ref: :py:class:`Reference`
+    
+    In fix mode, this function will try to standardise the alleles for the
+    given indel. This means that the VCF format will be enforced. No "-"
+    alleles will be authorized.
 
+    _e.g._ ref: 'TC', alt: '-' will become ref: 'CTC', alt: 'C' given that
+    the previous nucleotide in the reference is a 'C'. The position will be
+    adjusted accordingly.
+
+    In the regular mode, the only test will be that the `ref` allele is
+    consistent with the reference. That is, the sequence given as the `ref`
+    allele equals the one on the same length starting at `pos` in the genome.
+
+    """
     ref_ok = False
-    if flip:
+    if fix:
         # Insertions:
         # We will use the VCF format, so if the ref is '-', we will make change
         # the start (-1) and add the preceding nucleotide.
@@ -308,7 +327,7 @@ def check_indel_reference(indel, ref, flip):
         # Deletions:
         elif indel.alt == "-":
             indel.pos -= 1
-            indel.alt = ref.get_nucleotide(indel.chrom, indel.po)
+            indel.alt = ref.get_nucleotide(indel.chrom, indel.pos)
             indel.ref = indel.alt + indel.ref
 
     # Verify the reference allele.
@@ -320,9 +339,9 @@ def check_indel_reference(indel, ref, flip):
             # could be a bad mapping...
             err = ("chr{}:{} is an invalid locus. Verify that indel '{}' is "
                    "correct.").format(indel.chrom, indel.pos, indel.ref)
-            if flip:
+            if fix:
                 raise InvalidMapping(err)
             else:
                 return False
 
-    return
+    return True if not fix else indel
