@@ -21,13 +21,15 @@ import re
 from .. import settings
 from . import sequences
 
+
 class _Segment(object):
     def __init__(self, chrom, start, end):
         chrom = str(chrom)
-        assert re.match(settings.CHROM_REGEX, chrom) 
+        assert re.match(settings.CHROM_REGEX, chrom)
         self.chrom = chrom
         self.start = int(start)
         self.end = int(end)
+        assert self.start < self.end
 
     def overlaps_with(self, segment):
         return (self.chrom == segment.chrom and
@@ -42,7 +44,7 @@ class _Segment(object):
         return not self.__eq__(seg)
 
     def to_sequence(self):
-        return sequences.Sequence.from_reference(self.chrom, self.start, 
+        return sequences.Sequence.from_reference(self.chrom, self.start,
                                                  self.end)
 
     @staticmethod
@@ -71,7 +73,7 @@ class _Segment(object):
             block = [cur.start, cur.end]
             if nxt.start <= cur.end:
                 block[1] = max(block[1], nxt.end)
-            
+
             while nxt.start <= block[1] and j + 1 < len(li) - 1:
                 block[1] = max(block[1], nxt.end)
                 j += 1
@@ -91,6 +93,7 @@ class _Segment(object):
     def __repr__(self):
         return "<_Segment object chr{}:{}-{}>".format(self.chrom, self.start,
                                                       self.end)
+
 
 class Region(object):
     def __init__(self, chrom, start, end):
@@ -112,10 +115,14 @@ class Region(object):
         return False
 
     @property
+    def is_contiguous(self):
+        return len(self.segments) == 1
+
+    @property
     def sequence(self):
         """Builds a Sequence object representing the region.
 
-        If the region is disjoint, a tuple of sequences is returned.
+        If the region is non contiguous, a tuple of sequences is returned.
         """
         sequences = []
         for seg in self.segments:
@@ -129,3 +136,8 @@ class Region(object):
         region.segments = segments
         return region
 
+    def __repr__(self):
+        return "<{}Region: {}>".format(
+            "Contiguous" if self.is_contiguous else "NonContiguous",
+            self.segments
+        )
