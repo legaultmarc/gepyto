@@ -50,7 +50,7 @@ class UCSC(object):
 
         self.cur = self.con.cursor()
 
-    def raw_sql(sql, *params):
+    def raw_sql(self, sql, *params):
         """Execute a raw SQL query."""
         self.cur.execute(sql, *params)
         return self.cur.fetchall()

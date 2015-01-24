@@ -19,6 +19,7 @@ __all__ = []
 import re
 
 from .. import settings
+from ..db import ucsc
 from . import sequences
 
 
@@ -132,7 +133,7 @@ class Region(object):
 
     @staticmethod
     def _from_segments(segments):
-        region = Region(0, 0, 0)
+        region = Region(1, 1, 2)
         region.segments = segments
         return region
 
@@ -141,3 +142,36 @@ class Region(object):
             "Contiguous" if self.is_contiguous else "NonContiguous",
             self.segments
         )
+
+def get_telomere(chromosome):
+    """Returns a Noncontiguous region representing the telomeres of a
+    chromosome.
+    
+    :param chromosome: The chromosome, _e.g._ "3"
+    :type chromosome: str
+
+    :returns: A region corresponding to the telomeres.
+    :rtype: :py:class:`Region`
+
+    This is done by connecting to the UCSC MySQL server.
+
+    """
+    if chromosome.startswith("chr"):
+        pass
+    else:
+       chromosome = "chr" + chromosome
+
+    with ucsc.UCSC() as ucsc_connection:
+        telomeres = ucsc_connection.raw_sql(
+            ("SELECT chromStart + 1, chromEnd + 1 "
+             "FROM gap "
+             "WHERE chrom=%s AND type='telomere'"),
+            chromosome,
+        )
+        assert len(telomeres) == 2, "UCSC did not return two telomeres."
+
+    # Create a region for both telomeres and use a union to return the full
+    # region.
+    telo1 = Region(chromosome.lstrip("chr"), telomeres[0][0], telomeres[0][1])
+    telo2 = Region(chromosome.lstrip("chr"), telomeres[1][0], telomeres[1][1])
+    return telo1.union(telo2)
