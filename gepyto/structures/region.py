@@ -167,6 +167,29 @@ class Region(object):
         )
 
 
+def _query_ucsc_gap_table(chromosome, ucsc_type):
+    if not chromosome.startswith("chr"):
+        chromosome = "chr" + chromosome
+
+    valid_types = ("telomere", "centromere")
+    if ucsc_type not in valid_types:
+        msg = "'{}' is not a valid type: use {}.".format(
+            ucsc_type,
+            valid_types
+        )
+        raise TypeError(msg)
+
+    with ucsc.UCSC() as ucsc_connection:
+        res = ucsc_connection.raw_sql(
+            ("SELECT chromStart + 1, chromEnd + 1 "
+             "FROM gap "
+             "WHERE chrom=%s AND type=%s"),
+            (chromosome, ucsc_type),
+        )
+
+    return res
+
+
 def get_telomere(chromosome):
     """Returns a Noncontiguous region representing the telomeres of a
     chromosome.
@@ -180,22 +203,32 @@ def get_telomere(chromosome):
     This is done by connecting to the UCSC MySQL server.
 
     """
-    if chromosome.startswith("chr"):
-        pass
-    else:
-        chromosome = "chr" + chromosome
-
-    with ucsc.UCSC() as ucsc_connection:
-        telomeres = ucsc_connection.raw_sql(
-            ("SELECT chromStart + 1, chromEnd + 1 "
-             "FROM gap "
-             "WHERE chrom=%s AND type='telomere'"),
-            chromosome,
-        )
-        assert len(telomeres) == 2, "UCSC did not return two telomeres."
+    telomeres = _query_ucsc_gap_table(chromosome, "telomere")
+    assert len(telomeres) == 2, "UCSC did not return two telomeres."
 
     # Create a region for both telomeres and use a union to return the full
     # region.
     telo1 = Region(chromosome.lstrip("chr"), telomeres[0][0], telomeres[0][1])
     telo2 = Region(chromosome.lstrip("chr"), telomeres[1][0], telomeres[1][1])
     return telo1.union(telo2)
+
+
+def get_centromere(chromosome):
+    """Returns a contiguous region representing the centromere of a chromosome.
+
+    :param chromosome: The chromosome, _e.g._ "3"
+    :type chromosome: str
+
+    :returns: A region corresponding to the centromere.
+    :rtype: :py:class:`Region`
+
+    This is done by connecting to the UCSC MySQL server.
+
+    """
+    centromere = _query_ucsc_gap_table(chromosome, "centromere")
+    assert len(centromere) == 1, "UCSC returned {} centromere(s).".format(
+        len(centromere)
+    )
+    centromere = centromere[0]
+
+    return Region(chromosome.lstrip("chr"), centromere[0], centromere[1])
