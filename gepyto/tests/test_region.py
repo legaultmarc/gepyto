@@ -13,6 +13,7 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import unittest
+from collections import namedtuple
 
 from ..structures import region
 
@@ -141,3 +142,15 @@ class TestRegion(unittest.TestCase):
             region._Segment("3", 10, 20),
         ]
         self.assertEqual(merged, merged_ans)
+
+    def test_in_operator(self):
+        pos = namedtuple("pos", ["chrom", "pos"])
+        pos = pos("3", 123)
+
+        composite_region = region.Region("3", 5, 14)
+        composite_region = composite_region.union(region.Region("3", 101, 132))
+
+        self.assertTrue(pos in region.Region("3", 1, 124))
+        self.assertTrue(pos in region.Region("3", 1, 123))
+        self.assertTrue(pos in region.Region("3", 123, 124))
+        self.assertTrue(pos in composite_region)

@@ -44,6 +44,17 @@ class _Segment(object):
     def __ne__(self, seg):
         return not self.__eq__(seg)
 
+    def __contains__(self, o):
+        if hasattr(o, "chrom") and hasattr(o, "pos"):
+            return o.chrom == self.chrom and (self.start <= o.pos <= self.end)
+        elif hasattr(o, "chrom") and hasattr(o, "start") and hasattr(o, "end"):
+            return (o.chrom == self.chrom and
+                    (self.start <= o.start <= o.end <= self.end))
+        else:
+            raise TypeError("Object needs to have either (chrom, start, end) "
+                            "or (chrom, pos) attributes to test if it is in "
+                            "a _Segment or Region.")
+
     def to_sequence(self):
         return sequences.Sequence.from_reference(self.chrom, self.start,
                                                  self.end)
@@ -137,16 +148,29 @@ class Region(object):
         region.segments = segments
         return region
 
+    def __contains__(self, o):
+        """Tests if an object is in the region.
+
+        This is valid for any object with (`chrom` and `pos`) or (`chrom`,
+        `start` and `end`) attributes.
+
+        """
+        for seg in self.segments:
+            if o in seg:
+                return True
+        return False
+
     def __repr__(self):
         return "<{}Region: {}>".format(
             "Contiguous" if self.is_contiguous else "NonContiguous",
             self.segments
         )
 
+
 def get_telomere(chromosome):
     """Returns a Noncontiguous region representing the telomeres of a
     chromosome.
-    
+
     :param chromosome: The chromosome, _e.g._ "3"
     :type chromosome: str
 
@@ -159,7 +183,7 @@ def get_telomere(chromosome):
     if chromosome.startswith("chr"):
         pass
     else:
-       chromosome = "chr" + chromosome
+        chromosome = "chr" + chromosome
 
     with ucsc.UCSC() as ucsc_connection:
         telomeres = ucsc_connection.raw_sql(
