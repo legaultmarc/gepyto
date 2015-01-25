@@ -174,3 +174,10 @@ class TestSequence(unittest.TestCase):
 
         self.assertEqual(dna_seq.translate().seq, pro_seq.seq)
         self.assertEqual(rna_seq.translate().seq, pro_seq.seq)
+
+    def test_gc_content(self):
+        seq = struct.sequences.Sequence("test", "ATGC", "DNA")
+        self.assertEqual(seq.gc_content(), 0.5)
+
+        seq = struct.sequences.Sequence("test", "TAGTTACTAT", "DNA")
+        self.assertEqual(seq.gc_content(), 0.2)

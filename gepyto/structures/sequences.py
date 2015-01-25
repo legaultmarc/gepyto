@@ -7,6 +7,7 @@
 # 4.0 International License. To view a copy of this license, visit
 # http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
+from __future__ import division
 
 __author__ = "Marc-Andre Legault"
 __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
@@ -17,6 +18,7 @@ __all__ = ["Sequence", ]
 
 import textwrap
 import re
+import collections
 
 import numpy as np
 
@@ -179,6 +181,11 @@ class Sequence(object):
             ),
             info=self.info
         )
+
+    def gc_content(self):
+        """Computes the GC content for the sequence."""
+        counter = collections.Counter(self.seq)
+        return (counter["g"] + counter["c"]) / sum(counter.values())
 
     def bbc(self, k=10, alphabet=None):
         """Shortcut to base_base_correlation.
