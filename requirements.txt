@@ -1,4 +1,4 @@
-requests==2.4.3
+requests>=2.4.3
 numpy>=1.9.1
 pandas>=0.15
 pyfaidx>=0.3.4

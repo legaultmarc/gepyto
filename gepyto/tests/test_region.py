@@ -154,3 +154,35 @@ class TestRegion(unittest.TestCase):
         self.assertTrue(pos in region.Region("3", 1, 123))
         self.assertTrue(pos in region.Region("3", 123, 124))
         self.assertTrue(pos in composite_region)
+
+    def test_distance(self):
+        # Test region1 to the left.
+        region1 = region.Region("2", 12, 43)
+        region2 = region.Region("2", 121, 210)  # Distance is 121 - 43 = 78
+        self.assertEqual(78, region1.distance_to(region2))
+
+        # Test region1 to the right.
+        region1 = region.Region("2", 121, 210)
+        region2 = region.Region("2", 12, 43)
+        self.assertEqual(78, region1.distance_to(region2))
+
+        # Now test overlapping regions.
+        region1 = region.Region("2", 12, 43)
+        region2 = region.Region("2", 23, 162)
+        self.assertEqual(0, region1.distance_to(region2))
+
+        # Now test adjacent regions.
+        region1 = region.Region("2", 1234, 4000)
+        region2 = region.Region("2", 4001, 5412)
+        self.assertEqual(1, region1.distance_to(region2))
+
+        # Test composite regions.
+        region1 = region.Region("2", 2, 13)
+        region2 = region.Region("2", 51, 102)
+        region2 = region2.union(region.Region("2", 123, 246))
+        self.assertEqual(38, region1.distance_to(region2))
+
+        # Make sure there is a chromosome check.
+        region1 = region.Region("2", 2, 13)
+        region2 = region.Region("3", 51, 102)
+        self.assertRaises(Exception, region1.distance_to, region2)

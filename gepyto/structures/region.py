@@ -37,6 +37,16 @@ class _Segment(object):
                 self.start <= segment.end and
                 self.end >= segment.start)
 
+    def distance_to(self, segment):
+        if self.chrom != segment.chrom:
+            raise Exception("Comparing segments from different chromosomes.")
+        if self.overlaps_with(segment):
+            return 0
+        if self.end < segment.start:
+            return segment.start - self.end
+        else:
+            return self.start - segment.end
+
     def __eq__(self, seg):
         return (self.chrom == seg.chrom and self.start == seg.start and
                 self.end == seg.end)
@@ -152,6 +162,39 @@ class Region(object):
 
         return False
 
+    def distance_to(self, region):
+        """Computes the distance to the given Region."""
+        min_dist = float("infinity")
+        for seg1 in self.segments:
+            for seg2 in region.segments:
+                d = seg1.distance_to(seg2)
+                if d < min_dist:
+                    min_dist = d
+        return min_dist
+
+    @property
+    def chrom(self):
+        if self.is_contiguous:
+            return self.segments[0].chrom
+        else:
+            chrom = {seg.chrom for seg in self.segments}
+            if len(chrom) > 1:
+                raise Exception("Ambiguous chromosome for non contiguous "
+                                "region.")
+            return chrom[0]
+
+    @property
+    def start(self):
+        if self.is_contiguous:
+            return self.segments[0].start
+        return min([seg.start for seg in self.segments])
+
+    @property
+    def end(self):
+        if self.is_contiguous:
+            return self.segments[0].end
+        return max([seg.end for seg in self.segments])
+
     @property
     def is_contiguous(self):
         return len(self.segments) == 1
@@ -230,7 +273,8 @@ def get_telomere(chromosome):
 
     """
     telomeres = _query_ucsc_gap_table(chromosome, "telomere")
-    assert len(telomeres) == 2, "UCSC did not return two telomeres."
+    assert len(telomeres) == 2, ("UCSC did not return two telomeres (chrom={}"
+                                 ").".format(chromosome))
 
     # Create a region for both telomeres and use a union to return the full
     # region.
