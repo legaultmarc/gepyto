@@ -13,7 +13,7 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
-__all__ = []
+__all__ = ["Region", "get_centromere", "get_telomere"]
 
 
 import re
@@ -108,17 +108,43 @@ class _Segment(object):
 
 
 class Region(object):
+    """Region object to represent a part of the genome.
+
+    :param chrom: The chromosome.
+    :type chrom: str
+
+    :param start: The start of the region.
+    :type start: int
+
+    :param end: The end of the region.
+    :type end: int
+
+    This can either represent a contiguous region or a fragmented region
+    with multiple non-overlaping segments. This object can easily be converted
+    to a Sequence using the :py:func:`Region.sequence` property. It is
+    also easy to test overlap with another region or to test if an object is
+    contained within this region using the `in` operator.
+
+    """
     def __init__(self, chrom, start, end):
         self.segments = []
         self.segments.append(_Segment(chrom, start, end))
 
     def union(self, region):
+        """Primary method to create non contiguous regions.
+
+        This will create a region represented by the union of the current
+        Region and the provided Region. This means that overlapping segments
+        will be merged to avoid redundancy.
+
+        """
         segments = self.segments + region.segments
         segments = sorted(segments, key=lambda x: x.start)
         segments = _Segment.merge_segments(segments)
         return Region._from_segments(segments)
 
     def overlaps_with(self, region):
+        """Tests overlap with another region."""
         for seg1 in self.segments:
             for seg2 in region.segments:
                 if seg1.overlaps_with(seg2):

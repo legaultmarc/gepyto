@@ -20,3 +20,8 @@ Sequences
 .. automodule:: gepyto.structures.sequences
     :members:
 
+Region
+-------
+
+.. automodule:: gepyto.structures.region
+    :members:
