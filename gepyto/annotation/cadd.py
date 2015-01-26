@@ -194,8 +194,7 @@ def _parse_annotation(cadd_output):
                 # Create an indel.
                 v = struct.variants.Indel(
                     chrom=chrom,
-                    start=pos,
-                    end=pos + int(line[header["LENGTH"]]),
+                    pos=pos,
                     ref=ref,
                     alt=alt,
                     rs=None,
