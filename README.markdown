@@ -4,8 +4,12 @@
 
 # Introduction
 
+The name comes from `ge`nome `py`thon `to`ols. Originally, this package was
+called `genometools`, but was renamed to avoid confusion as another popular
+project uses that name.
+
 The fundamental goal of ``gepyto`` is to provide bioinformaticians with a set
-of tools to make script development faster. This means that most features are
+of tools to make developing scripts faster. This means that most features are
 included in ``gepyto`` because they provide a clear and eloquent way of
 expressing common genomics tasks through Python code. As an example, fetching
 gene or variant information from public databases is abstracted away through
