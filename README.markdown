@@ -4,7 +4,7 @@
 
 # Introduction
 
-The name comes from __ge__nome __py__thon __to__ols. Originally, this package
+The name comes from **ge**nome **py**thon **to**ols. Originally, this package
 was called `genometools`, but was renamed to avoid confusion as another popular
 project uses that name.
 
