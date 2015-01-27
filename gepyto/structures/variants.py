@@ -74,6 +74,13 @@ class Variant(object):
             if getattr(self, p, "-1") == "-1":
                 raise Exception("Missing parameter {}.".format(p))
 
+    def __hash__(self):
+        if all([hasattr(self, i) for i in ("chrom", "pos", "ref", "alt")]):
+            return hash((self.chrom, self.pos, self.ref, self.alt))
+        raise NotImplementedError("Variant hash is only implemented on objects"
+                                  " with 'chrom', 'pos', 'ref' and 'alt'"
+                                  " attributes.")
+
     def vcf_header(self):
         """Returns a valid VCF header line. """
         return "\t".join([

@@ -103,6 +103,20 @@ class TestVariant(unittest.TestCase):
         self.assertFalse(self.snp.in_gene(snp_g_out2))
         self.assertFalse(self.indel.in_gene(snp_g_out2))
 
+    def test_variant_comparison(self):
+        snp1 = struct.variants.SNP("22", 25855459, "rs12345", "g", "a")
+        snp2 = struct.variants.SNP("22", 25855459, None, "g", "a")  # Same as 1
+        snp3 = struct.variants.SNP("13", 32942179, "rs9567605", "t", "a")
+        indel = struct.variants.Indel("13", 32940014, "rs11571729", "g", "gt")
+
+        self.assertEqual(snp1, snp2)
+        self.assertFalse(snp1 == snp3)
+        self.assertFalse(snp1 == indel)
+
+        self.assertEqual(set([snp1, snp2]), set([snp1]))
+        self.assertTrue(len(set([snp1, snp2, snp3])) == 2)
+        self.assertTrue(len(set([snp1, snp2, snp3, indel])) == 3)
+
 
 class TestGene(unittest.TestCase):
     """Tests for the struct.genes module.
