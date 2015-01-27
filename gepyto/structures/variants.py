@@ -265,6 +265,8 @@ class Indel(Variant):
             traceback.print_tb(sys.exc_info()[2])
             raise e
 
+    __hash__ = Variant.__hash__
+
     @property
     def length(self):
         """Computes the size of the indel.
@@ -390,6 +392,8 @@ class SNP(Variant):
             )
             traceback.print_tb(sys.exc_info()[2])
             raise e
+
+    __hash__ = Variant.__hash__
 
     def get_position(self, zero_based=False):
         """Returns a variant in the standard chrXX:pos notation.
