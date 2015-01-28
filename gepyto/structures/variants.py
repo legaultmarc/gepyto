@@ -128,15 +128,6 @@ class Variant(object):
 
         return ret
 
-    def get_position(self):
-        """Abstract method.
-
-        Returns the genomic position of the variant using the standard format:
-        chrXX:00000-11111.
-
-        """
-        raise NotImplementedError()
-
     @staticmethod
     def from_ensembl_api(rs, build=settings.BUILD):
         """Builds the correct Variant subclass for the specified rs number.
@@ -293,16 +284,6 @@ class Indel(Variant):
 
         return indels
 
-    def get_position(self, zero_based=False):
-        """Returns an indel in the standard chrXX:POS notation.
-
-        :param zero_based: Indicates if zero based coordinates should be used.
-                           This is False by default (1 based coordinates).
-
-        """
-        pos = self.pos - 1 if zero_based else self.pos
-        return "chr{}:{}".format(self.chrom, pos)
-
     def vcf_line(self):
         """Returns a line describing the current variant as expected by the VCF
            format.
@@ -394,16 +375,6 @@ class SNP(Variant):
             raise e
 
     __hash__ = Variant.__hash__
-
-    def get_position(self, zero_based=False):
-        """Returns a variant in the standard chrXX:pos notation.
-
-        :param zero_based: Indicates if zero based coordinates should be used.
-                           This is False by default (1 based coordinates).
-
-        """
-        pos = self.pos - 1 if zero_based else self.pos
-        return "chr{}:{}".format(self.chrom, pos)
 
     def vcf_line(self):
         """Returns a line describing the current variant as expected by the VCF

@@ -75,12 +75,6 @@ class TestVariant(unittest.TestCase):
 
         self.assertEqual(snp, [self.snp])
 
-    def test_snp_get_position(self):
-        self.assertEqual(self.snp.get_position(), "chr19:55663495")
-
-    def test_indel_get_position(self):
-        self.assertEqual(self.indel.get_position(), "chr19:55663539")
-
     def test_variant_in(self):
         snp_g_in = struct.genes.Gene(build="GRCh37", chrom="19",
                                      start=55653495, end=55673495, xrefs={},
