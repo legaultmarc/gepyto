@@ -27,19 +27,19 @@ from .. import settings
 
 
 DNA_GENETIC_CODE = dict(
-    gct="a", gcc="a", gca="a", gcg="a",
-    cgt="r", cgc="r", cga="r", cgg="r", aga="r", agg="r",
-    aat="n", aac="n", gat="d", gac="d", tgt="c", tgc="c", caa="q", cag="q",
-    gaa="e", gag="e",
-    ggt="g", ggc="g", gga="g", ggg="g",
-    cat="h", cac="h", att="i", atc="i", ata="i",
-    tta="l", ttg="l", ctt="l", ctc="l", cta="l", ctg="l",
-    aaa="k", aag="k", atg="m", ttt="f", ttc="f",
-    cct="p", ccc="p", cca="p", ccg="p",
-    tct="s", tcc="s", tca="s", tcg="s", agt="s", agc="s",
-    act="t", acc="t", aca="t", acg="t",
-    tgg="w", tat="y", tac="y",
-    gtt="v", gtc="v", gta="v", gtg="v",
+    GCT="A", GCC="A", GCA="A", GCG="A",
+    CGT="R", CGC="R", CGA="R", CGG="R", AGA="R", AGG="R",
+    AAT="N", AAC="N", GAT="D", GAC="D", TGT="C", TGC="C", CAA="Q", CAG="Q",
+    GAA="E", GAG="E",
+    GGT="G", GGC="G", GGA="G", GGG="G",
+    CAT="H", CAC="H", ATT="I", ATC="I", ATA="I",
+    TTA="L", TTG="L", CTT="L", CTC="L", CTA="L", CTG="L",
+    AAA="K", AAG="K", ATG="M", TTT="F", TTC="F",
+    CCT="P", CCC="P", CCA="P", CCG="P",
+    TCT="S", TCC="S", TCA="S", TCG="S", AGT="S", AGC="S",
+    ACT="T", ACC="T", ACA="T", ACG="T",
+    TGG="W", TAT="Y", TAC="Y",
+    GTT="V", GTC="V", GTA="V", GTG="V",
 )
 
 
@@ -76,7 +76,7 @@ class Sequence(object):
                              "{}".format(seq_type, list(Sequence.types)))
 
         self.uid = uid
-        self.seq = s.lower()
+        self.seq = s.upper()
         self.seq_type = seq_type
         self.info = info
         self._annotations = []
@@ -151,7 +151,7 @@ class Sequence(object):
             # We need to convert the genetic code to RNA.
             code = {}
             for k, v in DNA_GENETIC_CODE.items():
-                k = k.replace("t", "u")
+                k = k.replace("T", "U")
                 code[k] = v
 
         else:
@@ -162,11 +162,11 @@ class Sequence(object):
             raise Exception("Invalid sequence length for translation.")
 
         if not no_check:
-            if s[:3] not in ("atg", "aug"):
+            if s[:3] not in ("ATG", "AUG"):
                 raise Exception("Sequence does not start with START codon "
                                 "(ATG).")
 
-        if s[-3:] not in ("taa", "tag", "tga", "uaa", "uag", "uga"):
+        if s[-3:] not in ("TAA", "TAG", "TGA", "UAA", "UAG", "UGA"):
             if not no_check:
                 raise Exception("Sequence does not end with STOP codon.")
         else:
@@ -185,7 +185,7 @@ class Sequence(object):
     def gc_content(self):
         """Computes the GC content for the sequence."""
         counter = collections.Counter(self.seq)
-        return (counter["g"] + counter["c"]) / sum(counter.values())
+        return (counter["G"] + counter["C"]) / sum(counter.values())
 
     def bbc(self, k=10, alphabet=None):
         """Shortcut to base_base_correlation.

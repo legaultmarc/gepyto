@@ -61,8 +61,8 @@ class TestVariant(unittest.TestCase):
                          test_format.format(self.indel))
 
         test_format = "{:%c,%p,1,%r/%a}"
-        self.assertEqual("19,55663495,1,c/t", test_format.format(self.snp))
-        self.assertEqual("19,55663539,1,ttc/t", test_format.format(self.indel))
+        self.assertEqual("19,55663495,1,C/T", test_format.format(self.snp))
+        self.assertEqual("19,55663539,1,TTC/T", test_format.format(self.indel))
 
         test_format = "{:%c%z}"
         self.assertRaises(KeyError, test_format.format, self.snp)
@@ -179,24 +179,24 @@ class TestSequence(unittest.TestCase):
     """
 
     def setUp(self):
-        self.dna = ("atggccaaggaaagatgcctgaaaaagtcctttcaagatagtcttgaagacataaag"
-                    "aagcgaatgaaagagaaaaggaataaaaacttggcagagattggcaaacgcaggtct"
-                    "tttatagctgcaccatgccaaataatcaccaacacttctacactgctgaaaaattac"
-                    "caagacaacaacaaaatgttagttttagctttggaaaatgaaaaatccaaagtgaaa"
-                    "gaagcccaagatatcatcctacagctgagaaaagaatgttactatctcacatgtcag"
-                    "ctatatgcattgaaaggaaaacttacatcacaacaaacagtagaacctgctcagaac"
-                    "caggaaatatgttcctctggaatggaccccaatagtgatgacagctccagaaattta"
-                    "tttgtgaaggatttaccgcaaattcctcttgaagaaactgaacttccaggacaagga"
-                    "gaatcatttcaaatagaagatcagatacctactattcctcaagacacactgggagtt"
-                    "gattttgattcaggtgaagctaagtctactgataatgtcttacctagaactgtatct"
-                    "gttcgtagcagtttaaagaaacattgttaa")
+        self.dna = ("ATGGCCAAGGAAAGATGCCTGAAAAAGTCCTTTCAAGATAGTCTTGAAGACATAAAG"
+                    "AAGCGAATGAAAGAGAAAAGGAATAAAAACTTGGCAGAGATTGGCAAACGCAGGTCT"
+                    "TTTATAGCTGCACCATGCCAAATAATCACCAACACTTCTACACTGCTGAAAAATTAC"
+                    "CAAGACAACAACAAAATGTTAGTTTTAGCTTTGGAAAATGAAAAATCCAAAGTGAAA"
+                    "GAAGCCCAAGATATCATCCTACAGCTGAGAAAAGAATGTTACTATCTCACATGTCAG"
+                    "CTATATGCATTGAAAGGAAAACTTACATCACAACAAACAGTAGAACCTGCTCAGAAC"
+                    "CAGGAAATATGTTCCTCTGGAATGGACCCCAATAGTGATGACAGCTCCAGAAATTTA"
+                    "TTTGTGAAGGATTTACCGCAAATTCCTCTTGAAGAAACTGAACTTCCAGGACAAGGA"
+                    "GAATCATTTCAAATAGAAGATCAGATACCTACTATTCCTCAAGACACACTGGGAGTT"
+                    "GATTTTGATTCAGGTGAAGCTAAGTCTACTGATAATGTCTTACCTAGAACTGTATCT"
+                    "GTTCGTAGCAGTTTAAAGAAACATTGTTAA")
 
-        self.rna = self.dna.replace("t", "u")
+        self.rna = self.dna.replace("T", "U")
 
         self.protein = ("MAKERCLKKSFQDSLEDIKKRMKEKRNKNLAEIGKRRSFIAAPCQIITNTSTL"
                         "LKNYQDNNKMLVLALENEKSKVKEAQDIILQLRKECYYLTCQLYALKGKLTSQ"
                         "QTVEPAQNQEICSSGMDPNSDDSSRNLFVKDLPQIPLEETELPGQGESFQIED"
-                        "QIPTIPQDTLGVDFDSGEAKSTDNVLPRTVSVRSSLKKHC").lower()
+                        "QIPTIPQDTLGVDFDSGEAKSTDNVLPRTVSVRSSLKKHC")
 
     def test_translation(self):
         dna_seq = struct.sequences.Sequence("test_dna", self.dna, "DNA")

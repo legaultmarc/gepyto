@@ -217,7 +217,7 @@ class Reference(object):
             error_message = error_message.format(chrom, start, end)
             raise InvalidMapping(error_message)
 
-        return str(seq.seq).lower()
+        return str(seq.seq).upper()
 
     def close(self):
         self.ref.close()
