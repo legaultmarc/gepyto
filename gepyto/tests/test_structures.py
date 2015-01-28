@@ -53,6 +53,29 @@ class TestVariant(unittest.TestCase):
                                               rs=self.deletion_rs,
                                               ref="CAGAGCCT", alt="C")
 
+    def test_format(self):
+        test_format = "{:chr%c:%p-%p}"
+        self.assertEqual("chr19:55663495-55663495",
+                         test_format.format(self.snp))
+        self.assertEqual("chr19:55663539-55663539",
+                         test_format.format(self.indel))
+
+        test_format = "{:%c,%p,1,%r/%a}"
+        self.assertEqual("19,55663495,1,c/t", test_format.format(self.snp))
+        self.assertEqual("19,55663539,1,ttc/t", test_format.format(self.indel))
+
+        test_format = "{:%c%z}"
+        self.assertRaises(KeyError, test_format.format, self.snp)
+        self.assertRaises(KeyError, test_format.format, self.indel)
+
+        test_format = "{:%c%C}"
+        self.assertRaises(KeyError, test_format.format, self.snp)
+        self.assertRaises(KeyError, test_format.format, self.indel)
+
+        test_format = "{:%cc\t%i}"
+        self.assertEqual("2c\trs11273285", test_format.format(self.insertion))
+        self.assertEqual("1c\trs376881461", test_format.format(self.deletion))
+
     def test_snp(self):
         snp = struct.variants.Variant.from_ensembl_api(self.snp_rs)
         self.assertEqual(snp, [self.snp])

@@ -81,6 +81,29 @@ class Variant(object):
                                   " with 'chrom', 'pos', 'ref' and 'alt'"
                                   " attributes.")
 
+    def __format__(self, format_spec, format_mapping=None):
+        """Specific format to print a variant."""
+        if format_mapping is None:
+            format_mapping = {
+                "%c": "chrom",
+                "%p": "pos",
+                "%r": "ref",
+                "%a": "alt",
+                "%i": "rs",
+            }
+
+        res = ""
+        last_pos = 0
+        for match in re.finditer("%[a-zA-Z]", format_spec):
+            if match.group() not in format_mapping:
+                raise KeyError("{}: invalid format".format(match.group()))
+
+            res += format_spec[last_pos:match.start()]
+            res += "{}".format((getattr(self, format_mapping[match.group()])))
+            last_pos = match.end()
+
+        return res
+
     def vcf_header(self):
         """Returns a valid VCF header line. """
         return "\t".join([
