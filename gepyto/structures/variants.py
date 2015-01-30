@@ -81,8 +81,40 @@ class Variant(object):
                                   " with 'chrom', 'pos', 'ref' and 'alt'"
                                   " attributes.")
 
-    def __format__(self, format_spec, format_mapping=None):
-        """Specific format to print a variant."""
+    def format(self, spec, format_mapping=None):
+        """Specific format to print a variant.
+
+        When printing variants, you have control over the representation using
+        special symbols similar to the `datetime` module:
+
+        +--------+--------------------+
+        | Symbol | Description        |
+        +========+====================+
+        | %c     | Chromosome         |
+        +--------+--------------------+
+        | %p     | Position           |
+        +--------+--------------------+
+        | %r     | Reference allele   |
+        +--------+--------------------+
+        | %a     | Alternative allele |
+        +--------+--------------------+
+        | %i     | RS Id              |
+        +--------+--------------------+
+
+        The basic syntax is the to use something like: ::
+
+            "{:chr%c:%p_%r/%a}".format(variant)  # OR
+            variant.format("chr%c:%p_%r/%a")
+
+        This can be useful to generate strings with a specific structure to
+        convert between file formats.
+
+        .. todo::
+
+            We also want to add something like `datetime.strptime()` to parse
+            variant objects from a coded string.
+
+        """
         if format_mapping is None:
             format_mapping = {
                 "%c": "chrom",
@@ -94,16 +126,28 @@ class Variant(object):
 
         res = ""
         last_pos = 0
-        for match in re.finditer("%[a-zA-Z]", format_spec):
+        found_mapping = False
+        for match in re.finditer("%[a-zA-Z]", spec):
             if match.group() not in format_mapping:
                 raise KeyError("{}: invalid format".format(match.group()))
 
-            res += format_spec[last_pos:match.start()]
+            res += spec[last_pos:match.start()]
             res += "{}".format((getattr(self, format_mapping[match.group()])))
+
             last_pos = match.end()
+            found_mapping = True
+
+        if not found_mapping:
+            return spec
 
         return res
 
+    def __format__(self, format_spec, format_mapping=None):
+        if format_spec == "":
+            return repr(self)
+        else:
+            return self.format(format_spec, format_mapping)
+        
     def vcf_header(self):
         """Returns a valid VCF header line. """
         return "\t".join([
@@ -214,7 +258,7 @@ class Indel(Variant):
     The latter represents deletions by using the preceding nucleotide for the
     reference.
 
-    _e.g._ If the genomic sequence is AAGAA -> AAAA (deletion of the G)
+    *e.g.* If the genomic sequence is AAGAA -> AAAA (deletion of the G)
     the indel will be represented as follows:
 
         - Start: 2
@@ -222,7 +266,7 @@ class Indel(Variant):
         - Alt: `A`
         - length: 1 (difference between allele lengths)
 
-    _e.g._ If the genomic sequence is AAGAA -> AAGCAA (insertion of the C)
+    *e.g.* If the genomic sequence is AAGAA -> AAGCAA (insertion of the C)
     the indel will be represented as follows:
 
         - Start: 3
