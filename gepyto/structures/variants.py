@@ -147,7 +147,7 @@ class Variant(object):
             return repr(self)
         else:
             return self.format(format_spec, format_mapping)
-        
+
     def vcf_header(self):
         """Returns a valid VCF header line. """
         return "\t".join([
@@ -513,3 +513,52 @@ class SNP(Variant):
     def __repr__(self):
         return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref,
                                        self.alt)
+
+
+def variant_list_to_dataframe(variants):
+    """Converts a regular Python list of Variant objects to a Pandas dataframe.
+
+    :param variants: A list of :py:class:`Variant` objects.
+    :type variants: list
+
+    :returns: A Pandas dataframe with genomic information as well as extra
+              fields defined in the `_info` parameter.
+    :rtype: DataFrame
+
+    This function will add annotations from the `_info` dict if such a
+    parameter is set for the considered variants. This dict has to be
+    comparable between all elements of the list or an Exception will be raised.
+
+    This functionality can be very useful to flexibly add annotations to
+    variants and to write them to a CSV file.
+
+    """
+    import pandas as pd
+    import numpy as np
+
+    # Check if we have extra information.
+    if hasattr(variants[0], "_info"):
+        extra_fields = list(variants[0]._info.keys())
+    else:
+        extra_fields = []
+
+    def _as_tuple(v):
+        li = [v.chrom, v.pos, v.rs, v.ref, v.alt]
+
+        if len(extra_fields) != 0:
+            discordant_fields_msg = ("Variants in list have to be comparable "
+                                     "to create a consistent DataFrame.")
+            assert extra_fields == list(v._info.keys()), discordant_fields_msg
+
+            for k in extra_fields:
+                li.append(v._info[k])
+
+        return tuple(li)
+
+    df = pd.DataFrame(
+        [_as_tuple(v) for v in variants],
+        columns=["chrom", "pos", "rs", "ref", "alt"] + extra_fields,
+    )
+    df = df.fillna(value=np.nan)
+
+    return df

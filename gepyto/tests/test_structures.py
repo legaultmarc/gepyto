@@ -14,6 +14,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import unittest
 
+import numpy as np
 from .. import structures as struct
 
 
@@ -134,6 +135,39 @@ class TestVariant(unittest.TestCase):
         self.assertTrue(len(set([snp1, snp2, snp3])) == 2)
         self.assertTrue(len(set([snp1, snp2, snp3, indel])) == 3)
 
+    def test_df(self):
+        snp1 = struct.variants.SNP("22", 25855459, "rs12345", "g", "a")
+        snp2 = struct.variants.SNP("13", 32942179, None, "t", "a")
+        indel = struct.variants.Indel("13", 32940014, "rs11571729", "g", "gt")
+
+        # Create a dataframe with those variants.
+        df = struct.variants.variant_list_to_dataframe([snp1, snp2, indel])
+        self.assertEqual(list(df["chrom"].values), ["22", "13", "13"])
+        self.assertEqual(
+            list(df["pos"].values),
+            [25855459, 32942179, 32940014]
+        )
+        self.assertEqual(
+            list(df["rs"].values),
+            ["rs12345", np.nan, "rs11571729"]
+        )
+        self.assertEqual(list(df["ref"].values), ["G", "T", "G"])
+        self.assertEqual(list(df["alt"].values), ["A", "A", "GT"])
+
+        # Now try with an extra field.
+        snp1._info = {"test": -1}
+        snp2._info = {"test": 0}
+        indel._info = {"test": 1}
+        df = struct.variants.variant_list_to_dataframe([snp1, snp2, indel])
+        self.assertEqual(list(df["test"].values), [-1, 0, 1])
+
+        # Now make sure there is a problem on inconsistent fields.
+        snp2._info["test2"] = "error"
+        self.assertRaises(
+            AssertionError,
+            struct.variants.variant_list_to_dataframe,
+            [snp1, snp2, indel]
+        )
 
 class TestGene(unittest.TestCase):
     """Tests for the struct.genes module.

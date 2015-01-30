@@ -161,7 +161,7 @@ class Reference(object):
         """
 
         type_message = ("Unsupported argument to check_variant_reference. "
-                        "A SNP object has to be provided.")
+                        "A SNP or Indel object has to be provided.")
 
         if not (hasattr(variant, "chrom") and
                 hasattr(variant, "pos") and
@@ -169,11 +169,11 @@ class Reference(object):
                 hasattr(variant, "alt")):
             raise TypeError(type_message)
 
-        if len(variant.ref) == len(variant.alt) == 1:
+        if (len(variant.ref) == len(variant.alt) == 1 and
+            "-" not in (variant.ref + variant.alt)):
             return check_snp_reference(variant, self, flip)
         else:
-            # return check_indel_reference(variant, self.ref, flip)
-            raise TypeError(type_message)
+            return check_indel_reference(variant, self, flip)
 
     def get_nucleotide(self, chrom, pos):
         """Get the nucleotide at the given genomic position. """

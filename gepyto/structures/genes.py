@@ -496,7 +496,7 @@ class Transcript(object):
         seq_types = ("genomic", "cds", "cdna", "protein")
         if seq_type not in seq_types:
             raise Exception("Invalid sequence type ({}). Known types are: "
-                            "{}".format(", ".format(seq_types)))
+                            "{}".format(seq_type, ", ".join(seq_types)))
 
         url = ("http://rest.ensembl.org/sequence/id/{}?"
                "content-type=application/json&"
