@@ -109,7 +109,7 @@ class Reference(object):
     If the genome file can't be found, this class fallbacks to the Ensembl
     remote API to get the sequences.
 
-    Thie behavious can also be forced by using the ``remote=True`` argument.
+    This behaviour can also be forced by using the ``remote=True`` argument.
 
     """
     def __init__(self, remote=False):

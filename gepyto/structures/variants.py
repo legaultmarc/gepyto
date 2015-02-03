@@ -23,7 +23,7 @@ import traceback
 
 from .. import settings
 from ..reference import Reference, check_indel_reference
-from ..db import query_ensembl
+from ..db import query_ensembl, get_url_prefix
 from . import genes
 
 
@@ -260,6 +260,40 @@ class ShortVariant(Variant):
 
         return ret
 
+    def load_ensembl_annotations(self, build=settings.BUILD):
+        """Uses the Ensembl API to get annotations for this SNP.
+
+        Available annotations are:
+
+            - MAF
+            - evidence
+            - most_severe_consequence
+
+        This will add all of them to the `_info` field.
+        """
+        if self.rs is None:
+            raise Exception("Getting annotation for '{}' from Ensembl "
+                            "requires the 'rs' field to be set (and not None)"
+                            ".".format(self))
+
+        url = get_url_prefix(build)
+        url += ("variation/homo_sapiens/{snp}"
+                "?content-type=application/json").format(snp=self.rs)
+
+        response = query_ensembl(url)
+
+        if not hasattr(self, "_info"):
+            self._info = {}
+
+        self._info["maf"] = response.get("MAF", None)
+        if self._info["maf"] is not None:
+            self._info["maf"] = float(self._info["maf"])
+        self._info["evidence"] = ",".join(response.get("evidence", []))
+        self._info["most_severe_consequence"] = response.get(
+            "most_severe_consequence",
+            None
+        )
+
     @staticmethod
     def from_ensembl_api(rs, build=settings.BUILD):
         """Builds the correct ShortVariant subclass for the specified rs
@@ -277,16 +311,10 @@ class ShortVariant(Variant):
 
         """
 
-        if build == "GRCh37":
-            url = ("http://grch37.rest.ensembl.org/variation/homo_sapiens/"
-                   "{snp}?content-type=application/json")
-        elif build == "GRCh38":
-            url = ("http://rest.ensembl.org/variation/homo_sapiens/{snp}"
-                   "?content-type=application/json")
-        else:
-            raise Exception("Unknown build '{}'.".format(build))
-
+        url = get_url_prefix(build)
+        url += "variation/homo_sapiens/{snp}?content-type=application/json"
         url = url.format(snp=rs)
+
         response = query_ensembl(url)
 
         if response is None:

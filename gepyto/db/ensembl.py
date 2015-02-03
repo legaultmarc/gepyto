@@ -30,7 +30,7 @@ except ImportError:
     from urllib.request import urlopen, HTTPError
 
 
-__all__ = ["query_ensembl", ]
+__all__ = ["query_ensembl", "get_url_prefix"]
 
 LAST_QUERY = 0
 
@@ -82,15 +82,12 @@ def query_ensembl(url):
     return response
 
 
-def mysql_connect(ensembl_version, build):
-    import MySQLdb
-
-    if build == "GRCh37":
-        build = "37"
-    elif build == "GRCh38":
-        build = "38"
-
-    core_db_name = "homo_sapiens_core_{ensver}_{build}".format(
-        ensver=ensembl_version,
-        build=build,
-    )
+def get_url_prefix(build):
+    """Generate a Ensembl REST API URL prefix for the given build."""
+    if build.lower() in ("grch37", "hg19"):
+        return "http://grch37.rest.ensembl.org/"
+    elif build.lower() in ("grch38", "hg38"):
+        return "http://rest.ensembl.org/"
+    else:
+        raise ValueError("Invalid build '{}'. Valid builds are: GRCh37 and "
+                         "GRCh38.".format(build))

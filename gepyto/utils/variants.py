@@ -21,6 +21,7 @@ import logging
 
 from ..settings import BUILD
 from ..structures.variants import SNP, Indel
+from ..structures.region import Region
 from ..db.ensembl import query_ensembl
 
 
@@ -29,7 +30,7 @@ def ensembl_variants_in_region(region, build=BUILD):
        Ensembl API.
 
     :param region: The region to query.
-    :type region: str
+    :type region: str or gepyto Region
 
     :param build: The genome build to use (GRCh37 or GRCh38).
     :type build: str
@@ -37,6 +38,11 @@ def ensembl_variants_in_region(region, build=BUILD):
     :returns: A list of :py:class:`gepyto.structures.variants.Variant`
               or a subclass.
     :rtype: list
+
+    .. warning:: 
+
+        If the Region is not contiguous, this will also return all the variants
+        that are in the "gaps".
 
     """
 
@@ -50,6 +56,9 @@ def ensembl_variants_in_region(region, build=BUILD):
         url = "http://" + url
     else:
         raise Exception("Unknown build '{}'.".format(build))
+
+    if type(region) is Region:
+        region = "chr{}:{}-{}".format(region.chrom, region.start, region.end)
 
     if region.startswith("chr"):
         region = region.lstrip("chr")

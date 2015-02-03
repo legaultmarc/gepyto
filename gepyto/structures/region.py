@@ -217,6 +217,29 @@ class Region(object):
         region.segments = segments
         return region
 
+    @staticmethod
+    def from_str(s):
+        """Parses the region object (contiguous only) from a string.
+
+        The expected format is `chrX:START-END`.
+        """
+        regex = (
+            r"^chr" + settings.CHROM_REGEX.pattern +
+            ":([0-9]+)-([0-9]+)$"
+        )
+        match = re.match(regex, s)
+        if match is None:
+            raise TypeError("Invalid format for Region string. Expected the "
+                            "form 'chrXX:START-END' and got '{}'."
+                            "".format(s))
+        chrom, start, end = match.groups()
+        start = int(start)
+        end = int(end)
+        assert end >= start
+        seg = _Segment(chrom, start, end)
+        region = Region._from_segments([seg, ])
+        return region
+
     def __contains__(self, o):
         """Tests if an object is in the region.
 
