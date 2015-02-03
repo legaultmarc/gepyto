@@ -538,7 +538,7 @@ def variant_list_to_dataframe(variants):
 
     # Check if we have extra information.
     if hasattr(variants[0], "_info"):
-        extra_fields = list(variants[0]._info.keys())
+        extra_fields = sorted(list(variants[0]._info.keys()))
     else:
         extra_fields = []
 
@@ -546,9 +546,9 @@ def variant_list_to_dataframe(variants):
         li = [v.chrom, v.pos, v.rs, v.ref, v.alt]
 
         if len(extra_fields) != 0:
-            discordant_fields_msg = ("Variants in list have to be comparable "
-                                     "to create a consistent DataFrame.")
-            assert extra_fields == list(v._info.keys()), discordant_fields_msg
+            field_mismatch = ("Variants in list have to be comparable to "
+                              "create a consistent DataFrame.")
+            assert extra_fields == sorted(list(v._info.keys())), field_mismatch
 
             for k in extra_fields:
                 li.append(v._info[k])
