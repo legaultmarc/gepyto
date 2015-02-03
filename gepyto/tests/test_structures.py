@@ -78,19 +78,19 @@ class TestVariant(unittest.TestCase):
         self.assertEqual("1c\trs376881461", test_format.format(self.deletion))
 
     def test_snp(self):
-        snp = struct.variants.Variant.from_ensembl_api(self.snp_rs)
+        snp = struct.variants.SNP.from_ensembl_api(self.snp_rs)
         self.assertEqual(snp, [self.snp])
 
     def test_indel(self):
-        indel = struct.variants.Variant.from_ensembl_api(self.indel_rs)
+        indel = struct.variants.Indel.from_ensembl_api(self.indel_rs)
         self.assertEqual(indel, [self.indel])
 
     def test_insertion(self):
-        indel = struct.variants.Variant.from_ensembl_api(self.insertion_rs)
+        indel = struct.variants.Indel.from_ensembl_api(self.insertion_rs)
         self.assertEqual(indel, [self.insertion])
 
     def test_deletion(self):
-        indel = struct.variants.Variant.from_ensembl_api(self.deletion_rs)
+        indel = struct.variants.ShortVariant.from_ensembl_api(self.deletion_rs)
         self.assertEqual(indel, [self.deletion])
 
     def test_snp_init_from_str(self):

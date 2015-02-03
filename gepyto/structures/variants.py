@@ -27,7 +27,7 @@ from ..db import query_ensembl
 from . import genes
 
 
-__all__ = ["SNP", "Indel", "Variant"]
+__all__ = ["SNP", "Indel"]
 
 
 class Variant(object):
@@ -75,8 +75,6 @@ class Variant(object):
                 raise Exception("Missing parameter {}.".format(p))
 
     def __hash__(self):
-        if all([hasattr(self, i) for i in ("chrom", "pos", "ref", "alt")]):
-            return hash((self.chrom, self.pos, self.ref, self.alt))
         raise NotImplementedError("Variant hash is only implemented on objects"
                                   " with 'chrom', 'pos', 'ref' and 'alt'"
                                   " attributes.")
@@ -148,6 +146,75 @@ class Variant(object):
         else:
             return self.format(format_spec, format_mapping)
 
+
+class ShortVariant(Variant):
+    """Parent class for short variants like SNPs and Indels.
+    
+    These have the following attributes:
+
+        - chrom
+        - pos
+        - rs
+        - ref
+        - alt
+
+    """
+    def __init__(self, *args, **kwargs):
+        _PARAMETERS = [
+            "chrom",
+            "pos",
+            "rs",
+            "ref",
+            "alt",
+        ]
+        kwargs["_PARAMETERS"] = _PARAMETERS
+        super(ShortVariant, self).__init__(*args, **kwargs)
+
+        self.pos = int(self.pos)
+        self.ref = self.ref.upper()
+        self.alt = self.alt.upper()
+        try:
+            assert re.match(settings.CHROM_REGEX, str(self.chrom))
+            assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
+            assert type(self.pos) is int
+            assert type(self.ref) is str
+            assert type(self.alt) is str
+        except AssertionError as e:
+            logging.critical(
+                "Assertion failed constructing the ShortVariant object. \n"
+                "Parameters were: \n"
+                "\tchrom: {chrom} ({chrom_type})\n"
+                "\tpos: {pos} ({pos_type})\n"
+                "\trs: {rs} ({rs_type})\n"
+                "\tref: {ref} ({ref_type})\n"
+                "\talt: {alt} ({alt_type})\n".format(
+                    chrom=self.chrom, chrom_type=type(self.chrom),
+                    pos=self.pos, pos_type=type(self.pos),
+                    rs=self.rs, rs_type=type(self.rs),
+                    ref=self.ref, ref_type=type(self.ref),
+                    alt=self.alt, alt_type=type(self.alt),
+                )
+            )
+            traceback.print_tb(sys.exc_info()[2])
+            raise e
+
+    def __hash__(self):
+        return hash((self.chrom, self.pos, self.ref, self.alt))
+
+    def hash(self):
+        return self.__hash__()
+
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return False
+
+        return (
+            self.chrom == other.chrom and
+            self.pos == other.pos and
+            self.ref == other.ref and
+            self.alt == other.alt
+        )
+
     def vcf_header(self):
         """Returns a valid VCF header line. """
         return "\t".join([
@@ -161,6 +228,22 @@ class Variant(object):
             "INFO",
         ])
 
+    def vcf_line(self):
+        """Returns a line describing the current variant as expected by the VCF
+           format.
+
+        """
+        return "\t".join(str(i) for i in [
+            self.chrom,
+            self.pos,
+            self.rs if self.rs else ".",
+            self.ref,
+            self.alt,
+            ".",  # No Quality
+            "PASS",  # PASS for filter
+            ".",  # Info
+        ])
+
     def in_gene(self, gene):
         """Method to test if the variant is in the gene.
 
@@ -172,32 +255,15 @@ class Variant(object):
         :rtype: bool
 
         """
-
-        if hasattr(self, "pos"):
-            start = self.pos
-        elif hasattr(self, "start"):
-            start = self.start
-        else:
-            raise NotImplementedError()
-
-        if hasattr(self, "end"):
-            end = self.end
-        elif hasattr(self, "pos"):
-            end = self.pos
-        else:
-            raise NotImplementedError()
-
-        chrom = self.chrom
-
-        ret = (str(chrom) == str(gene.chrom) and
-               int(start) > int(gene.start) and
-               int(end) < int(gene.end))
+        ret = (str(self.chrom) == str(gene.chrom) and
+               gene.start <= self.pos <= gene.end)
 
         return ret
 
     @staticmethod
     def from_ensembl_api(rs, build=settings.BUILD):
-        """Builds the correct Variant subclass for the specified rs number.
+        """Builds the correct ShortVariant subclass for the specified rs
+        number.
 
         :param rs: The rs number describing the variant of interest.
         :type rs: str
@@ -244,7 +310,7 @@ class Variant(object):
                     return Indel._parse_ensembl_indel(rs, mapping)
 
 
-class Indel(Variant):
+class Indel(ShortVariant):
     """Class representing short insertions/deletions (Indels).
 
     Either initialize with the parameters corresponding to:
@@ -282,48 +348,11 @@ class Indel(Variant):
         else:
             skip_allele_check = False
 
-        _PARAMETERS = [
-            "chrom",
-            "pos",
-            "rs",
-            "ref",
-            "alt",
-        ]
-        kwargs["_PARAMETERS"] = _PARAMETERS
         super(Indel, self).__init__(*args, **kwargs)
 
-        self.pos = int(self.pos)
-        self.ref = self.ref.upper()
-        self.alt = self.alt.upper()
-        try:
-            assert re.match(settings.CHROM_REGEX, str(self.chrom))
-            assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
-            assert type(self.pos) is int
-            assert type(self.ref) is str
-            assert type(self.alt) is str
-            if not skip_allele_check:
-                assert "-" not in self.ref
-                assert "-" not in self.alt
-        except AssertionError as e:
-            logging.critical(
-                "Assertion failed constructing the Indel object. \n"
-                "Parameters were: \n"
-                "\tchrom: {chrom} ({chrom_type})\n"
-                "\tpos: {pos} ({pos_type})\n"
-                "\trs: {rs} ({rs_type})\n"
-                "\tref: {ref} ({ref_type})\n"
-                "\talt: {alt} ({alt_type})\n".format(
-                    chrom=self.chrom, chrom_type=type(self.chrom),
-                    pos=self.pos, pos_type=type(self.pos),
-                    rs=self.rs, rs_type=type(self.rs),
-                    ref=self.ref, ref_type=type(self.ref),
-                    alt=self.alt, alt_type=type(self.alt),
-                )
-            )
-            traceback.print_tb(sys.exc_info()[2])
-            raise e
-
-    __hash__ = Variant.__hash__
+        if not skip_allele_check:
+            assert "-" not in self.ref
+            assert "-" not in self.alt
 
     @property
     def length(self):
@@ -351,38 +380,6 @@ class Indel(Variant):
 
         return indels
 
-    def vcf_line(self):
-        """Returns a line describing the current variant as expected by the VCF
-           format.
-
-        """
-        return "\t".join(str(i) for i in [
-            self.chrom,
-            self.pos,
-            self.rs if self.rs else ".",
-            self.ref,
-            self.alt,
-            ".",  # No Quality
-            "PASS",  # PASS for filter
-            ".",  # Info
-        ])
-
-    def __repr__(self):
-        return "chr{}:{}_{}/{}".format(
-            self.chrom, self.pos, self.ref, self.alt
-        )
-
-    def __eq__(self, other):
-        if type(self) is not type(other):
-            return False
-
-        return (
-            self.chrom == other.chrom and
-            self.pos == other.pos and
-            self.ref == other.ref and
-            self.alt == other.alt
-        )
-
     @classmethod
     def from_ensembl_api(cls, rs, build=settings.BUILD):
         """Gets the information from the Ensembl REST API.
@@ -391,11 +388,11 @@ class Indel(Variant):
         :param build: The genome build (e.g. GRCh37 or GRCh38).
 
         """
-        variants = Variant.from_ensembl_api(rs, build)
+        variants = ShortVariant.from_ensembl_api(rs, build)
         return [v for v in variants if v.__class__ is cls]
 
 
-class SNP(Variant):
+class SNP(ShortVariant):
     """Class representing a Single Nucleotide Polymorphism (SNP).
 
     Instances can be created in two ways: either by providing ordered fields:
@@ -403,61 +400,7 @@ class SNP(Variant):
 
     """
     def __init__(self, *args, **kwargs):
-        _PARAMETERS = [
-            "chrom",
-            "pos",
-            "rs",
-            "ref",
-            "alt",
-        ]
-        kwargs["_PARAMETERS"] = _PARAMETERS
         super(SNP, self).__init__(*args, **kwargs)
-
-        # Make sure everthing has the right type.
-        self.pos = int(self.pos)
-        self.ref = self.ref.upper()
-        self.alt = self.alt.upper()
-        try:
-            assert re.match(settings.CHROM_REGEX, str(self.chrom))
-            assert self.rs is None or re.match(r"^rs[0-9]+$", self.rs)
-            assert type(self.ref) is str and len(self.ref) == 1
-            assert type(self.alt) is str and len(self.alt) == 1
-        except AssertionError as e:
-            logging.critical(
-                "Assertion failed constructing the SNP object. \n"
-                "Parameters were: \n"
-                "\tchrom: {chrom} ({chrom_type})\n"
-                "\tpos: {pos} ({pos_type})\n"
-                "\trs: {rs} ({rs_type})\n"
-                "\tref: {ref} ({ref_type})\n"
-                "\talt: {alt} ({alt_type})\n".format(
-                    chrom=self.chrom, chrom_type=type(self.chrom),
-                    pos=self.pos, pos_type=type(self.pos),
-                    rs=self.rs, rs_type=type(self.rs),
-                    ref=self.ref, ref_type=type(self.ref),
-                    alt=self.alt, alt_type=type(self.alt),
-                )
-            )
-            traceback.print_tb(sys.exc_info()[2])
-            raise e
-
-    __hash__ = Variant.__hash__
-
-    def vcf_line(self):
-        """Returns a line describing the current variant as expected by the VCF
-        format.
-
-        """
-        return "\t".join(str(i) for i in [
-            self.chrom,
-            self.pos,
-            self.rs if self.rs else ".",
-            self.ref,
-            self.alt,
-            ".",  # No Quality
-            "PASS",  # PASS for filter
-            ".",  # Info
-        ])
 
     @classmethod
     def from_ensembl_api(cls, rs, build=settings.BUILD):
@@ -467,7 +410,7 @@ class SNP(Variant):
         :param build: The genome build (e.g. GRCh37 or GRCh38).
 
         """
-        variants = Variant.from_ensembl_api(rs, build)
+        variants = ShortVariant.from_ensembl_api(rs, build)
         return [v for v in variants if v.__class__ is cls]
 
     @classmethod
@@ -498,17 +441,6 @@ class SNP(Variant):
             var_list.append(v)
 
         return var_list
-
-    def __eq__(self, other):
-        if type(self) is not type(other):
-            return False
-
-        return (
-            self.chrom == other.chrom and
-            self.pos == other.pos and
-            self.ref == other.ref and
-            self.alt == other.alt
-        )
 
     def __repr__(self):
         return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref,
