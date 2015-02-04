@@ -16,6 +16,12 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 __all__ = ["Sequence", ]
 
+try:
+    from string import maketrans, translate
+except ImportError:
+    maketrans = str.maketrans
+    translate = str.translate
+
 import textwrap
 import re
 import collections
@@ -40,6 +46,12 @@ DNA_GENETIC_CODE = dict(
     ACT="T", ACC="T", ACA="T", ACG="T",
     TGG="W", TAT="Y", TAC="Y",
     GTT="V", GTC="V", GTA="V", GTG="V",
+)
+
+
+REVERSE_COMPLEMENT_DNA = dict(
+    A="T", C="G", G="C", T="A", M="K", R="Y", W="W", S="S", Y="R", K="M",
+    V="B", H="D", D="H", B="V",
 )
 
 
@@ -179,6 +191,23 @@ class Sequence(object):
             s="".join(
                 [code[s[i:i+3]] for i in range(0, len(s) - 2, 3)]
             ),
+            info=self.info
+        )
+
+    def reverse_complement(self):
+        """Reverse complement the sequence (compatible with IUPAC codes)."""
+        if self.seq_type != "DNA":
+            raise NotImplementedError("reverse_complement is only available "
+                                      "for DNA sequences.")
+        seq = self.seq[::-1]
+        before, after = zip(*REVERSE_COMPLEMENT_DNA.items())
+        trans = maketrans("".join(before), "".join(after))
+
+        seq = translate(seq, trans)
+        return Sequence(
+            uid="reversed_compl_{}".format(self.uid),
+            seq_type="DNA",
+            s=seq,
             info=self.info
         )
 

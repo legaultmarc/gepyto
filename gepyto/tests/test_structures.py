@@ -246,3 +246,8 @@ class TestSequence(unittest.TestCase):
 
         seq = struct.sequences.Sequence("test", "TAGTTACTAT", "DNA")
         self.assertEqual(seq.gc_content(), 0.2)
+
+    def test_reverse_complement(self):
+        seq = struct.sequences.Sequence("test", "TAGTVTAMCTATK", "DNA")
+        expected = "MATAGKTABACTA"
+        self.assertEqual(seq.reverse_complement().seq, expected)
