@@ -66,6 +66,7 @@ class TestImpute2Class(unittest.TestCase):
         self.f.write("""
 1 rs12345 1231415 A G 1 0 0 0.988 0.002 0 0 0.997 0.003
 1 rs23456 3214569 T C 0.869 0.130 0 0.903 0.095 0.002 0 0 1
+1 rs23457 3214570 T TC 0.869 0.130 0 0 1 0 0 0 1
 """.strip())
         self.f.seek(0)
 
@@ -96,6 +97,16 @@ class TestImpute2Class(unittest.TestCase):
             # TT, TT, CC
         )
 
+        self.prob_indel = (
+            "rs23457",
+            "1",
+            3214570,
+            "T",
+            "TC",
+            np.array([[0.869, 0.130, 0], [0, 1, 0], [0, 0, 1]]),
+            # T/T, T/TC, TC/TC
+        )
+
         self.prob_snp3 = (
             "rs1234567",
             "1",
@@ -116,6 +127,12 @@ class TestImpute2Class(unittest.TestCase):
             np.array([0.130, 0.099, 2]),
             {"minor": "C", "major": "T", "maf": 2 / 6.0, "name": "rs23456",
              "chrom": "1", "pos": 3214569}
+        )
+
+        self.dosage_indel = (
+            np.array([0.130, 1, 2]),
+            {"minor": "TC", "major": "T", "maf": 0.5, "name": "rs23457",
+             "chrom": "1", "pos": 3214570}
         )
 
         self.dosage_snp3_thresh_0 = (
@@ -140,9 +157,19 @@ class TestImpute2Class(unittest.TestCase):
             {"name": "rs23456", "chrom": "1", "pos": 3214569},
         )
 
+        self.hard_call_indel = (
+            np.array(["T T", "T TC", "TC TC"]),
+            {"name": "rs23457", "chrom": "1", "pos": 3214570},
+        )
+
         self.hard_call_snp2_thresh_9 = (
             np.array(["0 0", "T T", "C C"]),
             {"name": "rs23456", "chrom": "1", "pos": 3214569},
+        )
+
+        self.hard_call_indel_thresh_9 = (
+            np.array(["0 0", "T TC", "TC TC"]),
+            {"name": "rs23457", "chrom": "1", "pos": 3214570},
         )
 
     def tearDown(self):
@@ -152,8 +179,10 @@ class TestImpute2Class(unittest.TestCase):
 
     def test_syntax(self):
         """This is mostly to test the syntax for object initialization. """
+        # Reading the three lines
         f = fmts.impute2.Impute2File(self.f.name)
         lines = [f.readline(), ]
+        lines.append(f.readline())
         lines.append(f.readline())
         f.close()
 
@@ -184,6 +213,8 @@ class TestImpute2Class(unittest.TestCase):
                     self.assertTrue(compare_lines(line, self.prob_snp1))
                 elif i == 1:
                     self.assertTrue(compare_lines(line, self.prob_snp2))
+                elif i == 2:
+                    self.assertTrue(compare_lines(line, self.prob_indel))
                 else:
                     raise Exception()
 
@@ -195,15 +226,23 @@ class TestImpute2Class(unittest.TestCase):
                     self.assertTrue(compare_dosages(
                         self,
                         line,
-                        self.dosage_snp1
+                        self.dosage_snp1,
                     ))
 
                 elif i == 1:
                     self.assertTrue(compare_dosages(
                         self,
                         line,
-                        self.dosage_snp2
+                        self.dosage_snp2,
                     ))
+
+                elif i == 2:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.dosage_indel,
+                    ))
+
                 else:
                     raise Exception()
 
@@ -234,14 +273,21 @@ class TestImpute2Class(unittest.TestCase):
                     self.assertTrue(compare_dosages(
                         self,
                         line,
-                        self.hard_call_snp1
+                        self.hard_call_snp1,
                     ))
 
                 elif i == 1:
                     self.assertTrue(compare_dosages(
                         self,
                         line,
-                        self.hard_call_snp2
+                        self.hard_call_snp2,
+                    ))
+
+                elif i == 2:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_indel,
                     ))
 
                 else:
@@ -261,7 +307,14 @@ class TestImpute2Class(unittest.TestCase):
                     self.assertTrue(compare_dosages(
                         self,
                         line,
-                        self.hard_call_snp2_thresh_9
+                        self.hard_call_snp2_thresh_9,
+                    ))
+
+                elif i == 2:
+                    self.assertTrue(compare_dosages(
+                        self,
+                        line,
+                        self.hard_call_indel_thresh_9,
                     ))
 
                 else:

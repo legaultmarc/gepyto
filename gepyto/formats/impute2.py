@@ -261,9 +261,9 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
 def _compute_hard_calls(line, prob_threshold=0):
     """Computes hard calls from probabilities (IMPUTE2)."""
     # Getting the possible genotypes
-    possible_geno = np.array([" ".join(line.a1 * 2),
-                              " ".join(line.a1 + line.a2),
-                              " ".join(line.a2 * 2)])
+    possible_geno = np.array([" ".join([line.a1] * 2),
+                              " ".join([line.a1, line.a2]),
+                              " ".join([line.a2] * 2)])
 
     # The final genotype
     final_geno = possible_geno[np.argmax(line.probabilities, axis=1)]
