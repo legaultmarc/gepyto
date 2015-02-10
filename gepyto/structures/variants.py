@@ -337,6 +337,10 @@ class ShortVariant(Variant):
                 else:
                     return Indel._parse_ensembl_indel(rs, mapping)
 
+    def __repr__(self):
+        return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref,
+                                       self.alt)
+
 
 class Indel(ShortVariant):
     """Class representing short insertions/deletions (Indels).
@@ -469,10 +473,6 @@ class SNP(ShortVariant):
             var_list.append(v)
 
         return var_list
-
-    def __repr__(self):
-        return "chr{}:{}_{}/{}".format(self.chrom, self.pos, self.ref,
-                                       self.alt)
 
 
 def variant_list_to_dataframe(variants):
