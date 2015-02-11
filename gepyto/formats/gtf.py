@@ -27,6 +27,7 @@ from ..structures.sequences import Sequence
 class InvalidGTF(Exception):
     def __init__(self, value):
         self.value = value
+
     def __str__(self):
         return repr(self.value)
 
@@ -156,7 +157,6 @@ class GTFFile(object):
         return GTFFile.Line(seqname, source, feature, start, end, score,
                             strand, frame, attributes)
 
-
     def _read_headers(self):
         """Skip generic headers and parse paraseable headers of the GTF file.
 
@@ -243,4 +243,3 @@ class GTFFile(object):
             line = next(self._file)
 
         self._line_accumulator = line  # This is not a header line.
-
