@@ -153,6 +153,9 @@ class GTFFile(object):
             logging.critical(message)
             raise e
 
+        return GTFFile.Line(seqname, source, feature, start, end, score,
+                            strand, frame, attributes)
+
 
     def _read_headers(self):
         """Skip generic headers and parse paraseable headers of the GTF file.
