@@ -32,6 +32,9 @@ class _Segment(object):
         self.end = int(end)
         assert self.start < self.end
 
+    def as_document(self):
+        return self.__dict__
+
     def overlaps_with(self, segment):
         return (self.chrom == segment.chrom and
                 self.start <= segment.end and
@@ -139,6 +142,13 @@ class Region(object):
     def __init__(self, chrom, start, end):
         self.segments = []
         self.segments.append(_Segment(chrom, start, end))
+
+    def as_document(self):
+        if not self.is_contiguous:
+            raise Exception("Database serialization is not supported for "
+                            "non-contiguous regions.")
+        else:
+            return self.segments[0].as_document()
 
     def union(self, region):
         """Primary method to create non contiguous regions.

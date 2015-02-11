@@ -17,9 +17,9 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import sys
 import contextlib
-import json
 import logging
 import re
+import json
 
 try:
     # Python 2 support
@@ -126,6 +126,14 @@ class Gene(object):
             self.start,
             self.end
         )
+
+    def as_document(self):
+        obj = self.__dict__
+        if obj.get("transcripts") is not None:
+            del obj["transcripts"]
+        if obj.get("_region") is not None:
+            del obj["_region"]
+        return obj
 
     @property
     def region(self):
@@ -477,6 +485,11 @@ class Transcript(object):
         assert self.build in ("GRCh37", "GRCh38")
         assert re.match(r"([0-9]{1,2}|MT|X|Y)", self.chrom)
         assert self.start < self.end
+
+    def as_document(self):
+        obj = self.__dict__
+        del obj["parent"]
+        return obj
 
     @property
     def region(self):

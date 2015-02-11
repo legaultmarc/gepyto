@@ -96,6 +96,13 @@ class Sequence(object):
     def __repr__(self):
         return "<Sequence: {}>".format(self.uid)
 
+    def as_document(self):
+        obj = self.__dict__
+        if hasattr(obj, "info"):
+            obj.update(obj["info"])
+            del obj["info"]
+        return obj
+
     @classmethod
     def from_reference(cls, chrom, start, end=None, length=None):
         """Create a Sequence object from a given locus."""

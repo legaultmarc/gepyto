@@ -16,7 +16,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 import re
 import contextlib
 import logging
-import sqlite3
 
 import sys
 import traceback
@@ -214,6 +213,13 @@ class ShortVariant(Variant):
             self.ref == other.ref and
             self.alt == other.alt
         )
+
+    def as_document(self):
+        obj = self.__dict__
+        if obj.get("_info") is not None:
+            obj.update(obj["_info"])
+            del obj["_info"]
+        return obj
 
     def vcf_header(self):
         """Returns a valid VCF header line. """
