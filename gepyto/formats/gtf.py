@@ -14,12 +14,22 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
+import re
 import gzip
 import functools
 import datetime
+import logging
 from collections import namedtuple
 
 from ..structures.sequences import Sequence
+
+
+class InvalidGTF(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
 
 class GTFFile(object):
     """Class representing a GTF file."""
@@ -38,14 +48,20 @@ class GTFFile(object):
 
         self._file = opener(fn)
 
+        self._line_accumulator = None
+
         self._read_headers()
 
     def __next__(self):
-        line = next(self._file)
-        if line is None:
-            raise StopIteration()
+        if self._line_accumulator is None:
+            line = next(self._file)
+            if line is None:
+                raise StopIteration()
+        else:
+            line = self._line_accumulator
+            self._line_accumulator = None
 
-        return parse_line(line)
+        return GTFFile.parse_line(line)
 
     next = __next__
 
@@ -71,7 +87,72 @@ class GTFFile(object):
             line = line[3:]
 
         line = line.strip().split("\t")
+        if len(line) < 8:
+            raise InvalidGTF("Mandatory fields are missing.")
+
         seqname, source, feature, start, end, score, strand, frame = line[:8]
+        attributes = None
+
+        # Check the format and parse the attributes field (optional).
+        if len(line) >= 9:
+            # Merge attribute fields if tabs are in them.
+            line[8] = " ".join(line[8:])
+
+            # Extra attributes are available.
+            attributes = line[8].strip().split(";")
+            parsed_attributes = {}
+            for attr in attributes:
+                if attr == "":  # If lines finish with a ';'
+                    continue
+                attr = attr.strip()
+                tag = re.match(r"^([A-Za-z][A-Za-z0-9_]*)\s", attr)
+                if tag is None:
+                    raise InvalidGTF("Invalid tag in attributes field \"{}\"."
+                                     "".format(attr))
+                tag = tag.group(1)
+                value = attr[len(tag):].strip()
+                value = value.replace('"', '')
+                parsed_attributes[tag] = value
+
+            attributes = parsed_attributes
+
+        # Type checks.
+        if seqname.startswith("chr"):
+            seqname = seqname[3:]
+
+        try:
+            start = int(start)
+            end = int(end)
+            assert start <= end
+            assert start >= 1
+
+            score = float(score) if score != "." else None
+
+            strand = strand if strand != "." else None
+            assert strand in ("+", "-") or strand is None
+
+            frame = frame if frame != "." else None
+            assert frame in ("0", "1", "2") or frame is None
+
+        except AssertionError as e:
+            message = ("Some fields of the GTF were invalid. The parsed "
+                       "parameters are as follows:\n"
+                       "\tsequname: {seqname}\n"
+                       "\tsource: {source}\n"
+                       "\tfeature: {feature}\n"
+                       "\tstart: {start}\n"
+                       "\tend: {end}\n"
+                       "\tscore: {score}\n"
+                       "\tstrand: {strand}\n"
+                       "\tframe: {frame}\n")
+
+            message = message.format(seqname=seqname, source=source,
+                                     feature=feature, start=start, end=end,
+                                     score=score, strand=strand, frame=frame)
+
+            logging.critical(message)
+            raise e
+
 
     def _read_headers(self):
         """Skip generic headers and parse paraseable headers of the GTF file.
@@ -157,4 +238,6 @@ class GTFFile(object):
                 )
 
             line = next(self._file)
+
+        self._line_accumulator = line  # This is not a header line.
 
