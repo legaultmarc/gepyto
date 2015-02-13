@@ -58,23 +58,9 @@ class TestIndex(unittest.TestCase):
     def setUp(self):
         self.idx_info = db.index.build_index(TestIndex.fn, 0, 1, index_rate=1)
 
-    def test_build_index(self):
-        idx = self.idx_info["idx"]
-
-        for chrom in idx:
-            for pos, f_pos in idx[chrom]:
-                TestIndex.f.seek(f_pos)
-                line = TestIndex.f.readline()
-
-                # Check if the indexed chrom and pos are the same as in the
-                # file.
-                file_chrom, file_pos, _ = line.split("\t")
-                file_chrom = file_chrom.lstrip("chr")
-                file_pos = int(file_pos)
-                self.assertEqual(file_chrom, chrom)
-                self.assertEqual(file_pos, pos)
-
     def test_query(self):
+        idx = db.index.get_index(TestIndex.fn)
+
         loci = TestIndex.positions
         random.shuffle(loci)
         for chrom, pos in loci:
@@ -82,11 +68,11 @@ class TestIndex(unittest.TestCase):
                 chrom = chrom.lstrip("chr")
             # Search the entry.
             self.assertTrue(
-                db.index.goto(TestIndex.f, self.idx_info, chrom, pos)
+                db.index.goto(TestIndex.f, idx, chrom, pos)
             )
 
         # Negative examples
-        for chrom, pos in [(1, 0), (6, 1), (5, 1), (3, 10)]:
+        for chrom, pos in [(1, 0), (5, 1), (3, 10)]:
             self.assertFalse(
-                db.index.goto(TestIndex.f, self.idx_info, chrom, pos)
+                db.index.goto(TestIndex.f, idx, chrom, pos)
             )

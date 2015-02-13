@@ -132,7 +132,7 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         if skip_lines > 0:
             for i in range(skip_lines):
                 # Skip header lines if needed.
-                _ = f.readline()
+                f.readline()
 
         current_position = f.tell()
         if ignore_startswith is not None:
@@ -189,6 +189,9 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
 
             tell = f.tell()
             line = f.readline().rstrip().split(delimiter)
+            if len(line) == 1:
+                break  # End of file.
+
             chrom, pos = (line[chrom_col], line[pos_col])
             if chrom.startswith("chr"):
                 chrom = chrom[3:]
@@ -270,31 +273,38 @@ def goto(f, cursor, chrom, pos):
     target = ckey + pos
 
     # Find the two nearest index anchors.
-    sql = ("SELECT code, seek, abs(code - {target}) AS abs_distance,"
-           " code - {target} AS distance "
-           "FROM idx ORDER BY abs_distance ASC LIMIT 2")
+    sql = ("SELECT code, seek, min(abs(code - {target})), "
+           "code - {target} as dist"
+           " FROM idx GROUP BY dist<=0")
     sql = sql.format(target=target)
 
     cursor.execute(sql)
     hits = cursor.fetchall()
 
-    assert len(hits) == 2, "Internal error in the index."
+    # Handle the case where the position is directly in the index.
+    direct_hit = False
+    for hit in hits:
+        if hit[2] == 0:
+            f.seek(hit[1])
+            return True
 
     # If we have a sandwich hit, we will have one positive and one negative
     # distance.
-    if hits[0][3] != hits[1][3]:
-        top, bottom = sorted(hits, key=lambda x: x[1])
+    if len(hits) == 2:
+        top, bottom = hits if hits[0][3] <= 0 else hits[::-1]
         return goto_fine(f, chrom, pos, top[1], bottom[1])
 
-    # We didn't get a sandwich hit. Check if they are both after the hit. If 
-    # this is the case, we will search from the top of the file.
-    if hits[0][3] + hits[0][3] >= 0:
-        return goto_fine(f, chrom, pos, 0, min(hits[0][1], hits[1][1]))
-
-    # If this wasn't before everything, maybe it is after everything.
-    cur.execute("SELECT max(seek) FROM idx")
-    max_seek = cur.fetchone()[0]
-    return goto_fine(f, chrom, pos, max_seek, float("+infinity"))
+    assert len(hits) == 1, "Invalid indexing."
+    hits = hits[0]
+    # We didn't get a sandwich hit. Check if we have a hit before or after the
+    # nearest anchor.
+    if hits[3] < 0:
+        # We hit after the last index.
+        return goto_fine(f, chrom, pos, hits[1], float("+infinity"))
+    else:
+        # We hit before the first index.
+        # Because the first line is always indexed, we just return false.
+        return False
 
     # If we're still here then I don't know what happened.
     raise Exception("Couldn't use index, no anchors found.")
