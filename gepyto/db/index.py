@@ -13,16 +13,72 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
-try:
-    import cPickle
-except ImportError:
-    import pickle as cPickle
+import atexit
+import sqlite3
 import logging
 import re
 import os
 import bisect
 
 import numpy as np
+
+
+_registered_connexions = []
+_current_ckey = 1
+
+
+def _create_index_db(fn):
+    if os.path.isfile(fn):
+        os.remove(fn)
+
+    con = sqlite3.connect(fn)
+    cur = con.cursor()
+
+    # The meta table contains information on the file.
+    cur.execute("CREATE TABLE meta (delim TEXT, chrom INTEGER, pos INTEGER);")
+
+    # The key index contains large values aimed at encoding chromosomes.
+    cur.execute("CREATE TABLE key ("
+                "  chrom TEXT NOT NULL,"
+                "  ckey INTEGER NOT NULL,"
+                "  PRIMARY KEY (chrom),"
+                "  UNIQUE (ckey)"
+                ");")
+
+    # The index table contains the actual index.
+    cur.execute("CREATE TABLE idx ("
+                "  code INTEGER NOT NULL,"
+                "  seek INTEGER NOT NULL,"
+                "  PRIMARY KEY (code)"
+                ");")
+
+    con.commit()
+
+    return con, cur
+
+
+def _db_insert(cur, chrom, pos, tell):
+    global _current_ckey
+
+    # Get the code for the chromosome.
+    cur.execute("SELECT ckey FROM key WHERE chrom=?", (chrom, ))
+
+    try:
+        code = cur.fetchone()[0]
+    except TypeError:
+        # We need to insert the code for this chromosome.
+        code = _current_ckey * 10 ** 10
+        cur.execute(
+            "INSERT INTO key VALUES (?, ?)",
+            (chrom, code)
+        )
+
+        # Increment the chromosome key for the next one.
+        _current_ckey += 1
+
+    # Now do the insert.
+    code += pos
+    cur.execute("INSERT INTO idx VALUES (?, ?)", (code, tell))
 
 
 def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
@@ -54,21 +110,21 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
                               be used to parse the rest of the file.
     :type ignore_startswith: str
 
-    :returns: The index dict.
-    :rtype: dict
-
-    Basically, the index will be a pickle in the same directory.
-    The underlying data structure is:
-
-    {chrom: [(pos, index), ...], ...  }
-
-    Note that we make sure the indexed positions are increasing (file sorted)
-    but we do not look at all the positions so the check is very partial.
+    :returns: The index filename.
+    :rtype: str
 
     """
 
     idx_fn = _get_index_fn(fn)
-    idx = {}
+
+    con, cur = _create_index_db(idx_fn)
+
+    # Add information about the indexed file in the db.
+    cur.execute(
+        "INSERT INTO meta VALUES (?, ?, ?)",
+        (delimiter, chrom_col, pos_col)
+    )
+    con.commit()
 
     size = os.path.getsize(fn)  # Total filesize
     start = 0  # Byte position of the meat of the file (data).
@@ -78,13 +134,13 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
                 # Skip header lines if needed.
                 _ = f.readline()
 
-        cur = f.tell()
+        current_position = f.tell()
         if ignore_startswith is not None:
             line = f.readline()
             while line.startswith(ignore_startswith):
-                cur = f.tell()
+                current_position = f.tell()
                 line = f.readline()
-            f.seek(cur)
+            f.seek(current_position)
 
         start = f.tell()
 
@@ -109,7 +165,7 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         chrom1, pos1 = (l1[chrom_col], l1[pos_col])
         chrom1 = chrom1.lstrip("chr")
         pos1 = int(pos1)
-        idx[chrom1] = [(pos1, start), ]
+        _db_insert(cur, chrom1, pos1, start)
         f.seek(start)
 
         # Compute the seek jump size.
@@ -118,75 +174,45 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
 
         # Now we will jump of seek_jump, get to a fresh line (because we will
         # probably land in the middle of a line).
-        cur = f.tell() + seek_jump
+        current_position = f.tell() + seek_jump
 
         # We need to remember the previous position to make sure the file is
         # sorted.
-        prev_chrom = None
-        prev_pos = None
+        # Tuple of chromosome, position.
+        prev = (-1, -1)
 
-        while cur + seek_jump < size:
+        while current_position + seek_jump < size:
             # Jump in the file.
-            f.seek(cur)
+            f.seek(current_position)
             # Throw away partial line.
-            _ = f.readline()
+            f.readline()
 
-            # Make sure we did not end at the end of a sequence.
-            l1 = f.readline().rstrip().split(delimiter)
-            l2_tell = f.tell()
-            l2 = f.readline().rstrip().split(delimiter)
+            tell = f.tell()
+            line = f.readline().rstrip().split(delimiter)
+            chrom, pos = (line[chrom_col], line[pos_col])
+            if chrom.startswith("chr"):
+                chrom = chrom[3:]
 
-            if len(l1) == 1 or len(l2) == 1:
-                # We're at the end of the file.
-                assert f.readline() == ""
-                break
+            pos = int(pos)
 
-            chrom1, pos1 = (l1[chrom_col], l1[pos_col])
-            chrom2, pos2 = (l2[chrom_col], l2[pos_col])
+            if prev[0] == chrom and prev[1] == pos:
+                # We need to keep searching.
+                current_position += seek_jump
+                continue
 
-            chrom1 = chrom1.lstrip("chr")
-            chrom2 = chrom2.lstrip("chr")
+            try:
+                _db_insert(cur, chrom, pos, tell)
+            except sqlite3.IntegrityError:
+                con.close()
+                raise Exception("File is not sorted.")
 
-            pos1 = int(pos1)
-            pos2 = int(pos2)
+            prev = (chrom, pos)
 
-            if chrom1 == chrom2 and pos1 == pos2:
-                # We were in a repeated region so we will move further.
-                cur += 2 * line_length
-            else:
-                # We know that l2 is the first occurence of this position
-                # so we will index it.
-                if chrom2 not in idx:
-                    idx[chrom2] = []
-                idx[chrom2].append((pos2, l2_tell))
-                cur = l2_tell + seek_jump
+    # Commit the index.
+    con.commit()
+    con.close()
 
-                if prev_chrom is None:
-                    prev_chrom = chrom2
-                    prev_pos = pos2
-                else:
-                    # Make sure file is sorted.
-                    unsrt = False
-                    if prev_chrom == chrom2:
-                        if prev_pos > pos2:
-                            unsrt = True
-                    else:
-                        if prev_chrom > chrom2:
-                            unsrt = True
-                    if unsrt:
-                        raise Exception("File is not sorted.")
-
-    # Dump the index to disk.
-    idx = {
-        "idx": idx,
-        "delim": delimiter,
-        "chrom_col": chrom_col,
-        "pos_col": pos_col,
-    }
-    with open(idx_fn, "wb") as f:
-        cPickle.dump(idx, f)
-
-    return idx
+    return idx_fn
 
 
 def get_index(fn):
@@ -201,19 +227,24 @@ def get_index(fn):
 
     """
 
-    with open(_get_index_fn(fn), "rb") as f:
-        idx = cPickle.load(f)
-    return idx
+    global _registered_connexions
+
+    con = sqlite3.connect(_get_index_fn(fn))
+    cur = con.cursor()
+
+    _registered_connexions.append(con)
+
+    return cur
 
 
-def goto(f, idx, chrom, pos):
-    """Given a file and an index, go to the genomic coordinates.
+def goto(f, cursor, chrom, pos):
+    """Given a file and the cursor to an index, go to the genomic coordinates.
 
     :param f: An open file.
     :type f: file
 
-    :param idx: The index data structure (see build_index).
-    :param idx: dict
+    :param cursor: A sqlite3 cursor to the index database.
+    :param idx: :py:class:`sqlite3.Cursor`
 
     :param chrom: The queried chromosome.
     :param pos: The queried position on the chromosome.
@@ -222,105 +253,90 @@ def goto(f, idx, chrom, pos):
               the queried chromosome, position wasn't found.
     :rtype: bool
 
-    See https://docs.python.org/2/library/bisect.html
-
     """
 
-    # Those are the types used by the indexing structure.
-    chrom = str(chrom)
-    chrom = chrom.lstrip("chr")
-    num_chrom = None
-    if re.match(r"^[0-9]+$", chrom):
-        num_chrom = int(chrom)
-    pos = int(pos)
+    # Encode the target.
+    #   - Find the chromosome code.
+    cursor.execute("SELECT ckey FROM key WHERE chrom=?", (chrom, ))
+    try:
+        ckey = cursor.fetchone()[0]
+    except TypeError:
+        # Couldn't find chromosome key. This means it is not indexed.
+        return Exception("Chromosome '{}' not found in the index.".format(
+            chrom, 
+        ))
 
-    # Extract important information on index structure.
-    delim = idx["delim"]
-    chrom_col = idx["chrom_col"]
-    pos_col = idx["pos_col"]
-    idx = idx["idx"]
+    #   - Encode the position
+    target = ckey + pos
 
-    # Look if we can use chromosome indexing.
-    if chrom in idx:
-        li = [i[0] for i in idx[chrom]]  # Sorted list of pos
-        i = bisect.bisect_right(li, pos)
-    else:
-        i = None
+    # Find the two nearest index anchors.
+    sql = ("SELECT code, seek, abs(code - {target}) AS abs_distance,"
+           " code - {target} AS distance "
+           "FROM idx ORDER BY abs_distance ASC LIMIT 2")
+    sql = sql.format(target=target)
 
-    if not i:
-        # We didn't find something before in the index for this chromosome.
-        # OR this chromosome is not in the index.
-        # We will look at the end of the previous chromosome if it is a
-        # numeric chromosome.
-        if num_chrom is not None:
-            num_prev_chrom = num_chrom - 1
-            while str(num_prev_chrom) not in idx and num_prev_chrom > 1:
-                num_prev_chrom -= 1
-            prev_chrom = str(num_prev_chrom)
+    cursor.execute(sql)
+    hits = cursor.fetchall()
 
-            # A previous chromosome is in the index, start from there.
-            if prev_chrom in idx:
-                tell = idx[prev_chrom][-1][1]
-            # This chromosome and the previous are not in the index, start
-            # at the beginning.
-            elif num_chrom != 1 and chrom not in idx:
-                logging.warning("Sparse coverage index, try increasing the "
-                                "index rate. Neither chromosome {} or "
-                                "{} were sampled in the index.".format(
-                                    num_chrom, prev_chrom
-                                ))
-                tell = 0  # This could be bad.
-            # This is the first chromosome, start from the beginning, but don't
-            # print a warning because it will probably be up top.
-            elif num_chrom == 1:
-                tell = 0
-            else:
-                raise Exception("The observed index structure was not "
-                                "anticipated, please report it (query: "
-                                "{}, {}).".format(chrom, pos))
-        else:
-            # This is a non numeric chromosome.
-            # Find the last numeric chromosome and look after.
-            last_num_chrom = None
-            pat = r"^[0-9]+$"
-            keys = sorted([int(i) for i in idx.keys() if re.match(pat, i)])
-            last_num_chrom = str(keys[-1])
-            # Set the tell to the last index of this chromosome.
-            tell = idx[last_num_chrom][-1][1]
-    else:
-        tell = idx[chrom][i - 1][1]
+    assert len(hits) == 2, "Internal error in the index."
 
-    f.seek(tell)
+    # If we have a sandwich hit, we will have one positive and one negative
+    # distance.
+    if hits[0][3] != hits[1][3]:
+        top, bottom = sorted(hits, key=lambda x: x[1])
+        return goto_fine(f, chrom, pos, top[1], bottom[1])
 
-    while True:
+    # We didn't get a sandwich hit. Check if they are both after the hit. If 
+    # this is the case, we will search from the top of the file.
+    if hits[0][3] + hits[0][3] >= 0:
+        return goto_fine(f, chrom, pos, 0, min(hits[0][1], hits[1][1]))
+
+    # If this wasn't before everything, maybe it is after everything.
+    cur.execute("SELECT max(seek) FROM idx")
+    max_seek = cur.fetchone()[0]
+    return goto_fine(f, chrom, pos, max_seek, float("+infinity"))
+
+    # If we're still here then I don't know what happened.
+    raise Exception("Couldn't use index, no anchors found.")
+
+
+def goto_fine(f, chrom, pos, top, bottom):
+    # TODO implement binary search.
+
+    # Get the meta information.
+    idx_filename = _get_index_fn(f.name)
+    con = sqlite3.connect(idx_filename)
+    cursor = con.cursor()
+    try:
+        delim, chrom_col, pos_col = cursor.execute(
+            "SELECT * FROM meta"
+        ).fetchone()
+    finally:
+        con.close()
+
+    # Go to the start of the plausible region.
+    f.seek(top)
+
+    while f.tell() < bottom:
         # Iterate through the file.
         here = f.tell()
         line = f.readline().rstrip().split(delim)
-        if len(line) == 1:
+
+        if len(line) == 1:  # This is 1 because of the split of ""
             # End of file.
             return False
 
         this_chrom = line[chrom_col]
         this_chrom = this_chrom.lstrip("chr")
 
-        if re.match(r"^[0-9]+$", this_chrom):
-            num_this_chrom = int(this_chrom)
-        else:
-            num_this_chrom = None
-
         this_pos = int(line[pos_col])
-
-        # We're too far, didn't find it.
-        if num_this_chrom is not None and num_chrom is not None:
-            if num_this_chrom > num_chrom:
-                return False
-            elif num_this_chrom == num_chrom and this_pos > pos:
-                return False
 
         # We got it!
         if this_chrom == chrom and this_pos == pos:
             f.seek(here)
             return True
+
+    return False
 
 
 def _get_index_fn(fn):
@@ -337,3 +353,11 @@ def _get_index_fn(fn):
         ))
 
     return os.path.abspath("{}.gtidx".format(fn))
+
+
+def close_connexions():
+    for con in _registered_connexions:
+        con.close()
+
+
+atexit.register(close_connexions)
