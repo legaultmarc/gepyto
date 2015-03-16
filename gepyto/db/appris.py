@@ -52,7 +52,7 @@ def _load_appris():
     db = collections.defaultdict(list)
     with gzip.open(fn) as f:
         for line in f:
-            line = line.rstrip()
+            line = line.rstrip().decode("UTF-8")
             tu = tuple(line.split("\t"))
             cur.execute("INSERT INTO appris VALUES (?, ?, ?, ?, ?)", tu)
 
