@@ -231,18 +231,22 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
     else:
         sub_data = data[data.dmax >= prob_threshold][["d1", "d2", "d3"]]
         count = Counter(sub_data.idxmax(axis=1))
-        a1_freq = ((count["d1"] * 2) + count["d2"]) / (sum(count.values()) * 2)
+        total_count = (sum(count.values()) * 2)
+        a1_count = ((count["d1"] * 2) + count["d2"])
+        a1_freq = a1_count / total_count
 
     # Computing the dosage
     minor_allele = "d1"
     minor = line.a1
     major = line.a2
     maf = a1_freq
+    minor_count = a1_count
     if a1_freq >= 0.5:
         minor_allele = "d3"
         minor = line.a2
         major = line.a1
         maf = 1 - a1_freq
+        minor_count = total_count - a1_count
     data["dosage"] = (data[minor_allele] + (data.d2 / 2)) * 2
 
     # Setting values to NaN when max prob is lower than threshold
@@ -252,6 +256,7 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
         "major": major,
         "minor": minor,
         "maf": maf,
+        "minor_allele_count": minor_count,
         "name": line.name,
         "chrom": line.chrom,
         "pos": line.pos,
