@@ -23,6 +23,11 @@ import bisect
 import numpy as np
 
 
+# TODO:
+# - Implement the binary search in the goto_fine function.
+# - Drop sqlite3 and do the indexing in memory using pandas dataframes.
+
+
 _registered_connexions = []
 _current_ckey = 1
 
@@ -366,8 +371,11 @@ def _get_index_fn(fn):
 
 
 def close_connexions():
-    for con in _registered_connexions:
-        con.close()
+    try:
+        for con in _registered_connexions:
+            con.close()
+    except Exception:
+        pass
 
 
 atexit.register(close_connexions)

@@ -120,31 +120,31 @@ class TestImpute2Class(unittest.TestCase):
         self.dosage_snp1 = (
             np.array([0., 0.002, 1.003]),
             {"minor": "G", "major": "A", "maf": 1 / 6.0, "name": "rs12345",
-             "chrom": "1", "pos": 1231415, }
+             "chrom": "1", "pos": 1231415, "minor_allele_count": 1}
         )
 
         self.dosage_snp2 = (
             np.array([0.130, 0.099, 2]),
             {"minor": "C", "major": "T", "maf": 2 / 6.0, "name": "rs23456",
-             "chrom": "1", "pos": 3214569}
+             "chrom": "1", "pos": 3214569, "minor_allele_count": 2}
         )
 
         self.dosage_indel = (
             np.array([0.130, 1, 2]),
             {"minor": "TC", "major": "T", "maf": 0.5, "name": "rs23457",
-             "chrom": "1", "pos": 3214570}
+             "chrom": "1", "pos": 3214570, "minor_allele_count": 3}
         )
 
         self.dosage_snp3_thresh_0 = (
             np.array([2, 0.5, 0.55, 1]),
             {"minor": "A", "major": "T", "maf": 3 / 8.0, "name": "rs1234567",
-             "chrom": "1", "pos": 1234567},
+             "chrom": "1", "pos": 1234567, "minor_allele_count": 3},
         )
 
         self.dosage_snp3_thresh_9 = (
             np.array([0, np.nan, np.nan, 1]),
             {"minor": "T", "major": "A", "maf": 1 / 4.0, "name": "rs1234567",
-             "chrom": "1", "pos": 1234567},
+             "chrom": "1", "pos": 1234567, "minor_allele_count": 1},
         )
 
         self.hard_call_snp1 = (

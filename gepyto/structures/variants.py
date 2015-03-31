@@ -27,7 +27,7 @@ from ..db import query_ensembl, get_url_prefix
 from . import genes
 
 
-__all__ = ["SNP", "Indel"]
+__all__ = ["SNP", "Indel", "variant_list_to_dataframe"]
 
 
 class Variant(object):

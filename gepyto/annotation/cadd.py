@@ -62,7 +62,7 @@ def cadd_score(variants):
 
     form = {
         "inclAnno": "Yes",
-        "version": "v1.1"
+        "version": "v1.2"
     }
 
     # Create a VCF file from the list of variants.
