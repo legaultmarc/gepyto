@@ -13,77 +13,17 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
-import atexit
-import sqlite3
 import logging
 import re
 import os
-import bisect
 
 import numpy as np
 
-
-# TODO:
-# - Implement the binary search in the goto_fine function.
-# - Drop sqlite3 and do the indexing in memory using pandas dataframes.
+MAGIC_NUMBER = 10 ** 9  # This should be larger than any indexed position.
 
 
-_registered_connexions = []
-_current_ckey = 1
-
-
-def _create_index_db(fn):
-    if os.path.isfile(fn):
-        os.remove(fn)
-
-    con = sqlite3.connect(fn)
-    cur = con.cursor()
-
-    # The meta table contains information on the file.
-    cur.execute("CREATE TABLE meta (delim TEXT, chrom INTEGER, pos INTEGER);")
-
-    # The key index contains large values aimed at encoding chromosomes.
-    cur.execute("CREATE TABLE key ("
-                "  chrom TEXT NOT NULL,"
-                "  ckey INTEGER NOT NULL,"
-                "  PRIMARY KEY (chrom),"
-                "  UNIQUE (ckey)"
-                ");")
-
-    # The index table contains the actual index.
-    cur.execute("CREATE TABLE idx ("
-                "  code INTEGER NOT NULL,"
-                "  seek INTEGER NOT NULL,"
-                "  PRIMARY KEY (code)"
-                ");")
-
-    con.commit()
-
-    return con, cur
-
-
-def _db_insert(cur, chrom, pos, tell):
-    global _current_ckey
-
-    # Get the code for the chromosome.
-    cur.execute("SELECT ckey FROM key WHERE chrom=?", (chrom, ))
-
-    try:
-        code = cur.fetchone()[0]
-    except TypeError:
-        # We need to insert the code for this chromosome.
-        code = _current_ckey * 10 ** 10
-        cur.execute(
-            "INSERT INTO key VALUES (?, ?)",
-            (chrom, code)
-        )
-
-        # Increment the chromosome key for the next one.
-        _current_ckey += 1
-
-    # Now do the insert.
-    code += pos
-    cur.execute("INSERT INTO idx VALUES (?, ?)", (code, tell))
+class EndOfFile(Exception):
+    pass
 
 
 def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
@@ -122,15 +62,6 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
 
     idx_fn = _get_index_fn(fn)
 
-    con, cur = _create_index_db(idx_fn)
-
-    # Add information about the indexed file in the db.
-    cur.execute(
-        "INSERT INTO meta VALUES (?, ?, ?)",
-        (delimiter, chrom_col, pos_col)
-    )
-    con.commit()
-
     size = os.path.getsize(fn)  # Total filesize
     start = 0  # Byte position of the meat of the file (data).
     with open(fn, "r") as f:
@@ -140,6 +71,7 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
                 f.readline()
 
         current_position = f.tell()
+        # Skip the lines that start with the user provided string.
         if ignore_startswith is not None:
             line = f.readline()
             while line.startswith(ignore_startswith):
@@ -154,10 +86,13 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         # Estimate the line length using first 100 lines
         line_length = np.empty((100))
         prev = start
-        for i in range(100):
-            _ = f.readline()
-            line_length[i] = f.tell() - prev
-            prev = f.tell()
+        # We take 100 sample positions in the file.
+        for i, jump in enumerate(np.linspace(0, 0.9 * size, 100)):
+            f.seek(start + int(jump))
+            f.readline()  # Throw away chunk.
+            line_start = f.tell()
+            f.readline()
+            line_length[i] = f.tell() - line_start
 
         line_length = np.mean(line_length)
         approx_num_lines = size / line_length
@@ -165,60 +100,78 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         # Go back to start
         f.seek(start)
 
+        # Prepare the variables to keep track of the position encoding.
+        encoding = {
+            "current_key": 0,
+            "chromosomes": {}
+        }
+        index = []  # List of (code, seek) tuples.
+
+        def encode_locus(chrom, pos):
+            chrom = str(chrom)
+            if chrom not in encoding["chromosomes"]:
+                encoding["current_key"] += 1
+                encoding["chromosomes"][chrom] = encoding["current_key"]
+            
+            return encoding["chromosomes"][chrom] * MAGIC_NUMBER + pos
+
+
+        def get_locus(line):
+            if not line:
+                raise EndOfFile()
+
+            line = line.rstrip().split(delimiter)
+ 
+            chrom = line[chrom_col]
+            if chrom.startswith("chr"):
+                chrom = chrom[3:]
+            pos = int(line[pos_col])
+
+            return chrom, pos
+
         # Add the first line to the index.
-        l1 = f.readline().rstrip().split(delimiter)
-        chrom1, pos1 = (l1[chrom_col], l1[pos_col])
-        chrom1 = chrom1.lstrip("chr")
-        pos1 = int(pos1)
-        _db_insert(cur, chrom1, pos1, start)
-        f.seek(start)
+        chrom1, pos1 = get_locus(f.readline())
+        index.append((encode_locus(chrom1, pos1), start))
 
         # Compute the seek jump size.
         target_num_lines = index_rate * approx_num_lines
         seek_jump = size / target_num_lines
 
-        # Now we will jump of seek_jump, get to a fresh line (because we will
-        # probably land in the middle of a line).
-        current_position = f.tell() + seek_jump
+        # We start indexing here.
+        current_position = f.tell()
 
-        # We need to remember the previous position to make sure the file is
-        # sorted.
-        # Tuple of chromosome, position.
-        prev = (-1, -1)
-
-        while current_position + seek_jump < size:
+        while current_position + seek_jump < size + start:
             # Jump in the file.
-            f.seek(current_position)
+            f.seek(current_position + seek_jump)
             # Throw away partial line.
             f.readline()
 
-            tell = f.tell()
-            line = f.readline().rstrip().split(delimiter)
-            if len(line) == 1:
-                break  # End of file.
-
-            chrom, pos = (line[chrom_col], line[pos_col])
-            if chrom.startswith("chr"):
-                chrom = chrom[3:]
-
-            pos = int(pos)
-
-            if prev[0] == chrom and prev[1] == pos:
-                # We need to keep searching.
-                current_position += seek_jump
-                continue
-
+            # We need to make sure this is a unique line.
             try:
-                _db_insert(cur, chrom, pos, tell)
-            except sqlite3.IntegrityError:
-                con.close()
-                raise Exception("File is not sorted.")
+                cur_chrom, cur_pos = get_locus(f.readline())
 
-            prev = (chrom, pos)
+                tell = f.tell()
+                next_chrom, next_pos = get_locus(f.readline())
+                while next_chrom == cur_chrom and next_pos == cur_pos:
+                    tell = f.tell()
+                    next_chrom, next_pos = get_locus(f.readline())
 
-    # Commit the index.
-    con.commit()
-    con.close()
+                # We found "new" content.
+                # First we make sure that the file looks sorted. Then, we
+                # index it.
+                code = encode_locus(next_chrom, next_pos)
+                if index[-1][0] > code:
+                    raise Exception("This file is not sorted.")
+
+                index.append((code, tell))
+                current_position = tell
+
+            except EndOfFile:
+                break  # Reached the end of the file.
+
+    # Write the index pickle.
+    index = np.array(index)
+    np.save(idx_fn, index)
 
     return idx_fn
 
@@ -235,14 +188,7 @@ def get_index(fn):
 
     """
 
-    global _registered_connexions
-
-    con = sqlite3.connect(_get_index_fn(fn))
-    cur = con.cursor()
-
-    _registered_connexions.append(con)
-
-    return cur
+    return np.load(fn + ".npy")
 
 
 def goto(f, cursor, chrom, pos):
@@ -368,14 +314,3 @@ def _get_index_fn(fn):
         ))
 
     return os.path.abspath("{}.gtidx".format(fn))
-
-
-def close_connexions():
-    try:
-        for con in _registered_connexions:
-            con.close()
-    except Exception:
-        pass
-
-
-atexit.register(close_connexions)
