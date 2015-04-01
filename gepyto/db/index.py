@@ -13,6 +13,11 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 import logging
 import re
 import os
@@ -171,7 +176,15 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
 
     # Write the index pickle.
     index = np.array(index)
-    np.save(idx_fn, index)
+
+    # Create a dict containing the relevant information to be able to find the
+    # chromosome and position columns.
+    info = {"chrom_col": chrom_col, "pos_col": pos_col, "delimiter": delimiter}
+    pickle_string = pickle.dumps(info)
+
+    with open(idx_fn, "wb") as f:
+        f.write(pickle_string)
+        np.save(f, index)
 
     return idx_fn
 
@@ -183,12 +196,30 @@ def get_index(fn):
     :param fn: The filname of the file to index.
     :type fn: str
 
-    :returns: The index dictionary corresponding to the input file.
-    :rtype: dict
+    :returns: The numpy array representing the actual index.
+    :rtype: :py:module:`numpy.ndarray`
 
     """
 
-    return np.load(fn + ".npy")
+    # Read the information pickle part.
+    # We use the numpy format definition to know when to stop:
+    # https://github.com/numpy/numpy/blob/master/doc/neps/npy-format.rst
+    fn = _get_index_fn(fn)
+    with open(fn, "rb") as f:
+        i = 0
+        chunk = None
+        while chunk != b"\x93NUMPY":
+            f.seek(i)
+            chunk = f.read(6)
+            i += 1
+
+        pickle_length = f.tell() - 6
+        f.seek(0)
+        info = pickle.loads(f.read(pickle_length))
+
+        index = np.load(f)
+
+    return (info, index)
 
 
 def goto(f, cursor, chrom, pos):
