@@ -162,34 +162,52 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         # We start indexing here.
         current_position = f.tell()
 
-        while current_position + seek_jump < size + start:
-            # Jump in the file.
-            f.seek(current_position + seek_jump)
-            # Throw away partial line.
-            f.readline()
+        if index_rate == 1:
+            logging.debug("Full indexing mode.")
+            tell = f.tell()
+            for line in f:
+                chrom, pos = get_locus(line)
+                code = encode_locus(chrom, pos)
 
-            # We need to make sure this is a unique line.
-            try:
-                cur_chrom, cur_pos = get_locus(f.readline())
-
-                tell = f.tell()
-                next_chrom, next_pos = get_locus(f.readline())
-                while next_chrom == cur_chrom and next_pos == cur_pos:
-                    tell = f.tell()
-                    next_chrom, next_pos = get_locus(f.readline())
-
-                # We found "new" content.
-                # First we make sure that the file looks sorted. Then, we
-                # index it.
-                code = encode_locus(next_chrom, next_pos)
                 if index[-1][0] > code:
                     raise Exception("This file is not sorted.")
+                elif index[-1][0] == code:
+                    continue  # Already indexed.
+                else:
+                    index.append((code, tell))
 
-                index.append((code, tell))
-                current_position = tell
+                tell = f.tell()
 
-            except EndOfFile:
-                break  # Reached the end of the file.
+        else:
+            logging.debug("Sparse indexing mode.")
+            while current_position + seek_jump < size + start:
+                # Jump in the file.
+                f.seek(current_position + seek_jump)
+                # Throw away partial line.
+                f.readline()
+
+                # We need to make sure this is a unique line.
+                try:
+                    cur_chrom, cur_pos = get_locus(f.readline())
+
+                    tell = f.tell()
+                    next_chrom, next_pos = get_locus(f.readline())
+                    while next_chrom == cur_chrom and next_pos == cur_pos:
+                        tell = f.tell()
+                        next_chrom, next_pos = get_locus(f.readline())
+
+                    # We found "new" content.
+                    # First we make sure that the file looks sorted. Then, we
+                    # index it.
+                    code = encode_locus(next_chrom, next_pos)
+                    if index[-1][0] > code:
+                        raise Exception("This file is not sorted.")
+
+                    index.append((code, tell))
+                    current_position = tell
+
+                except EndOfFile:
+                    break  # Reached the end of the file.
 
     index = np.array(index)
 

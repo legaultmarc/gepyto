@@ -55,10 +55,8 @@ class TestIndex(unittest.TestCase):
         os.remove(cls.fn)
         os.remove(cls.fn + ".gtidx")
 
-    def setUp(self):
-        self.idx_info = db.index.build_index(TestIndex.fn, 0, 1, index_rate=1)
-
-    def test_query(self):
+    def test_sparse_queries(self):
+        db.index.build_index(TestIndex.fn, 0, 1, index_rate=0.9)
         idx = db.index.get_index(TestIndex.fn)
 
         loci = TestIndex.positions
@@ -81,3 +79,21 @@ class TestIndex(unittest.TestCase):
                 # If chromosomes are not indexed, we expect gepyto to tell
                 # you without returning True or False.
                 pass
+
+    def test_full_queries(self):
+        db.index.build_index(TestIndex.fn, 0, 1, index_rate=1)
+        idx = db.index.get_index(TestIndex.fn)
+
+        loci = TestIndex.positions
+        random.shuffle(loci)
+        for chrom, pos in loci:
+            # Search the entry.
+            self.assertTrue(
+                db.index.goto(TestIndex.f, idx, chrom, pos)
+            )
+
+        # Negative examples
+        for chrom, pos in [(1, 0), ("X", 1), (3, 10), ("Y", 3)]:
+            self.assertFalse(
+                db.index.goto(TestIndex.f, idx, chrom, pos)
+            )
