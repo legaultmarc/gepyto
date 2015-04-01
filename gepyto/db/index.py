@@ -18,9 +18,11 @@ try:
 except ImportError:
     import pickle
 
+import bisect
 import logging
 import re
 import os
+import functools
 
 import numpy as np
 
@@ -29,6 +31,20 @@ MAGIC_NUMBER = 10 ** 9  # This should be larger than any indexed position.
 
 class EndOfFile(Exception):
     pass
+
+
+def _get_locus(line, chrom_col, pos_col, delimiter):
+    if not line:
+        raise EndOfFile()
+
+    line = line.rstrip().split(delimiter)
+
+    chrom = line[chrom_col]
+    if chrom.startswith("chr"):
+        chrom = chrom[3:]
+    pos = int(line[pos_col])
+
+    return chrom, pos
 
 
 def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
@@ -64,6 +80,8 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
     :rtype: str
 
     """
+
+    assert chrom_col != pos_col
 
     idx_fn = _get_index_fn(fn)
 
@@ -121,18 +139,13 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
             return encoding["chromosomes"][chrom] * MAGIC_NUMBER + pos
 
 
-        def get_locus(line):
-            if not line:
-                raise EndOfFile()
-
-            line = line.rstrip().split(delimiter)
- 
-            chrom = line[chrom_col]
-            if chrom.startswith("chr"):
-                chrom = chrom[3:]
-            pos = int(line[pos_col])
-
-            return chrom, pos
+        # Bind some parameters so that function calls look nicer.
+        get_locus = functools.partial(
+            _get_locus,
+            chrom_col=chrom_col,
+            pos_col=pos_col,
+            delimiter=delimiter
+        )
 
         # Add the first line to the index.
         chrom1, pos1 = get_locus(f.readline())
@@ -174,14 +187,16 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
             except EndOfFile:
                 break  # Reached the end of the file.
 
-    # Write the index pickle.
     index = np.array(index)
 
     # Create a dict containing the relevant information to be able to find the
     # chromosome and position columns.
-    info = {"chrom_col": chrom_col, "pos_col": pos_col, "delimiter": delimiter}
+    info = {"chrom_col": chrom_col, "pos_col": pos_col, "delimiter": delimiter,
+            "chrom_codes": encoding["chromosomes"]}
+
     pickle_string = pickle.dumps(info)
 
+    # Write the index pickle (and numpy matrix).
     with open(idx_fn, "wb") as f:
         f.write(pickle_string)
         np.save(f, index)
@@ -211,6 +226,8 @@ def get_index(fn):
         while chunk != b"\x93NUMPY":
             f.seek(i)
             chunk = f.read(6)
+            if not chunk:
+                raise Exception("Invalid format for the index.")
             i += 1
 
         pickle_length = f.tell() - 6
@@ -222,14 +239,17 @@ def get_index(fn):
     return (info, index)
 
 
-def goto(f, cursor, chrom, pos):
-    """Given a file and the cursor to an index, go to the genomic coordinates.
+def goto(f, index, chrom, pos):
+    """Given a file, a locus and the index, go to the genomic coordinates.
 
     :param f: An open file.
     :type f: file
 
-    :param cursor: A sqlite3 cursor to the index database.
-    :param idx: :py:class:`sqlite3.Cursor`
+    :param index: This is actually a tuple. The first element is an information
+                  dict containing the delimiter, chromosome column and position
+                  column. The second element is a numpy matrix containing the
+                  encoded loci and the "tell" positions.
+    :param index: tuple
 
     :param chrom: The queried chromosome.
     :param pos: The queried position on the chromosome.
@@ -240,95 +260,89 @@ def goto(f, cursor, chrom, pos):
 
     """
 
-    # Encode the target.
-    #   - Find the chromosome code.
-    cursor.execute("SELECT ckey FROM key WHERE chrom=?", (chrom, ))
-    try:
-        ckey = cursor.fetchone()[0]
-    except TypeError:
-        # Couldn't find chromosome key. This means it is not indexed.
-        return Exception("Chromosome '{}' not found in the index.".format(
-            chrom, 
-        ))
+    # Type checks for the parameters.
+    chrom = str(chrom)
+    if chrom.startswith("chr"):
+        chrom = chrom[3:]
+    pos = int(pos)
 
-    #   - Encode the position
-    target = ckey + pos
+    info, index = index
 
-    # Find the two nearest index anchors.
-    sql = ("SELECT code, seek, min(abs(code - {target})), "
-           "code - {target} as dist"
-           " FROM idx GROUP BY dist<=0")
-    sql = sql.format(target=target)
+    # Encode the locus.
+    chrom_code = info["chrom_codes"].get(str(chrom))
+    if chrom_code is None:
+        raise Exception("Chromosome '{}' is not in the index.".format(chrom))
 
-    cursor.execute(sql)
-    hits = cursor.fetchall()
+    code = chrom_code * MAGIC_NUMBER + pos
+    logging.debug("Looking for code: {}".format(code))
 
-    # Handle the case where the position is directly in the index.
-    direct_hit = False
-    for hit in hits:
-        if hit[2] == 0:
-            f.seek(hit[1])
-            return True
+    # Find the boundaries for the locus.
+    boundary = bisect.bisect_left(index[:, 0], code)
 
-    # If we have a sandwich hit, we will have one positive and one negative
-    # distance.
-    if len(hits) == 2:
-        top, bottom = hits if hits[0][3] <= 0 else hits[::-1]
-        return goto_fine(f, chrom, pos, top[1], bottom[1])
+    # The hit is at the end of the index.
+    if boundary == index.shape[0]:
+        logging.debug("Looking from the end of the index.")
+        return goto_fine(f, chrom, pos, index[-1][1], float("+infinity"), info)
 
-    assert len(hits) == 1, "Invalid indexing."
-    hits = hits[0]
-    # We didn't get a sandwich hit. Check if we have a hit before or after the
-    # nearest anchor.
-    if hits[3] < 0:
-        # We hit after the last index.
-        return goto_fine(f, chrom, pos, hits[1], float("+infinity"))
-    else:
-        # We hit before the first index.
-        # Because the first line is always indexed, we just return false.
+    if index[boundary, 0] == code:
+        # We got a direct hit.
+        logging.debug("Direct hit on locus.")
+        f.seek(index[boundary, 1])
+        return True
+
+    # We always index the first position, so nothing should come before unless
+    # it's a direct hit.
+    if boundary == 0:
+        logging.debug("Locus before first index.")
         return False
 
-    # If we're still here then I don't know what happened.
-    raise Exception("Couldn't use index, no anchors found.")
-
-
-def goto_fine(f, chrom, pos, top, bottom):
-    # TODO implement binary search.
-
-    # Get the meta information.
-    idx_filename = _get_index_fn(f.name)
-    con = sqlite3.connect(idx_filename)
-    cursor = con.cursor()
+    left = index[boundary - 1, 1]
+    left_code = index[boundary, 0]
     try:
-        delim, chrom_col, pos_col = cursor.execute(
-            "SELECT * FROM meta"
-        ).fetchone()
-    finally:
-        con.close()
+        right = index[boundary + 1, 1]
+        right_code = index[boundary + 1, 0]
+    except IndexError:
+        right = float("+infinity")  # Right boundary not in index, use the EOF.
+        right_code = float("+infinity")
+
+    logging.debug("Found boundaries: {}:{} and {}:{}. Using linear search to "
+                  "find the exact position.".format(left_code, left,
+                                                    right_code, right))
+    return goto_fine(f, chrom, pos, left, right, info)
+
+
+def goto_fine(f, chrom, pos, left, right, info):
 
     # Go to the start of the plausible region.
-    f.seek(top)
+    f.seek(left)
 
-    while f.tell() < bottom:
-        # Iterate through the file.
+    # Bind some parameters to the line parser.
+    get_locus = functools.partial(
+        _get_locus,
+        chrom_col=info["chrom_col"],
+        pos_col=info["pos_col"],
+        delimiter=info["delimiter"],
+    )
+
+    # Iterate through the file.
+    while True:
         here = f.tell()
-        line = f.readline().rstrip().split(delim)
 
-        if len(line) == 1:  # This is 1 because of the split of ""
-            # End of file.
+        try:
+            this_chrom, this_pos = get_locus(f.readline())
+
+            # We got it!
+            if this_chrom == chrom and this_pos == pos:
+                f.seek(here)
+                return True
+
+        except EndOfFile:
+            logging.debug("Reached end of file without finding the locus.")
             return False
 
-        this_chrom = line[chrom_col]
-        this_chrom = this_chrom.lstrip("chr")
-
-        this_pos = int(line[pos_col])
-
-        # We got it!
-        if this_chrom == chrom and this_pos == pos:
-            f.seek(here)
-            return True
-
-    return False
+        if here > right:
+            logging.debug("Didn't find the locus before the right boundary.")
+            return False
 
 
 def _get_index_fn(fn):
