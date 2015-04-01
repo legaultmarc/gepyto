@@ -64,15 +64,20 @@ class TestIndex(unittest.TestCase):
         loci = TestIndex.positions
         random.shuffle(loci)
         for chrom, pos in loci:
-            if type(chrom) is str:
-                chrom = chrom.lstrip("chr")
-            # Search the entry.
-            self.assertTrue(
-                db.index.goto(TestIndex.f, idx, chrom, pos)
-            )
+            # We only test indexed chromosomes...
+            if chrom in idx[0]["chrom_codes"]:
+                # Search the entry.
+                self.assertTrue(
+                    db.index.goto(TestIndex.f, idx, chrom, pos)
+                )
 
         # Negative examples
-        for chrom, pos in [(1, 0), (5, 1), (3, 10)]:
-            self.assertFalse(
-                db.index.goto(TestIndex.f, idx, chrom, pos)
-            )
+        for chrom, pos in [(1, 0), ("X", 1), (3, 10), ("Y", 3)]:
+            try:
+                self.assertFalse(
+                    db.index.goto(TestIndex.f, idx, chrom, pos)
+                )
+            except db.index.ChromosomeNotIndexed:
+                # If chromosomes are not indexed, we expect gepyto to tell
+                # you without returning True or False.
+                pass

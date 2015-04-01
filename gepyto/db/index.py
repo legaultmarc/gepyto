@@ -33,6 +33,10 @@ class EndOfFile(Exception):
     pass
 
 
+class ChromosomeNotIndexed(Exception):
+    pass
+
+
 def _get_locus(line, chrom_col, pos_col, delimiter):
     if not line:
         raise EndOfFile()
@@ -271,7 +275,9 @@ def goto(f, index, chrom, pos):
     # Encode the locus.
     chrom_code = info["chrom_codes"].get(str(chrom))
     if chrom_code is None:
-        raise Exception("Chromosome '{}' is not in the index.".format(chrom))
+        raise ChromosomeNotIndexed(
+            "Chromosome '{}' is not in the index.".format(chrom)
+        )
 
     code = chrom_code * MAGIC_NUMBER + pos
     logging.debug("Looking for code: {}".format(code))
