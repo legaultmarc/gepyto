@@ -165,18 +165,20 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
         if index_rate == 1:
             logging.debug("Full indexing mode.")
             tell = f.tell()
-            for line in f:
+            line = f.readline()
+            while line:
                 chrom, pos = get_locus(line)
                 code = encode_locus(chrom, pos)
 
                 if index[-1][0] > code:
                     raise Exception("This file is not sorted.")
                 elif index[-1][0] == code:
-                    continue  # Already indexed.
+                    pass
                 else:
                     index.append((code, tell))
 
                 tell = f.tell()
+                line = f.readline()
 
         else:
             logging.debug("Sparse indexing mode.")
