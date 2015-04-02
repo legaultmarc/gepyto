@@ -35,7 +35,7 @@ class TestIndex(unittest.TestCase):
         # The third column is 1 for the first occurence of the locus and
         # gibberish for the other columns.
         cls.positions = [
-            ("chr1", 1, 1), (1, 11, 1), (1, 123, 1), (2, 1, 1), (2, 11, 1), 
+            ("chr1", 1, 1), (1, 11, 1), (1, 123, 1), (2, 1, 1), (2, 11, 1),
             (2, 11, "gibberish"), (2, 11, "blablatidoo"), (2, 11, "potatoes"),
             (2, 21, 1), (2, 34, 1), (3, 1, 1), (3, 2, 1), (3, 3, 1), (3, 4, 1),
             (3, 4, "banana"), (3, 5, 1), ("chr3", 6, 1), (3, 7, 1), (3, 8, 1),

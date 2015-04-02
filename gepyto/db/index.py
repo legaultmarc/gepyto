@@ -243,7 +243,8 @@ def get_index(fn):
     # Read the information pickle part.
     # We use the numpy format definition to know when to stop:
     # https://github.com/numpy/numpy/blob/master/doc/neps/npy-format.rst
-    fn = _get_index_fn(fn)
+    indexed_filename = fn
+    fn = _get_index_fn(indexed_filename)
     with open(fn, "rb") as f:
         i = 0
         chunk = None
@@ -260,7 +261,30 @@ def get_index(fn):
 
         index = np.load(f)
 
-    return (info, index)
+    # This is a class that will behave like the (info, index) tuple.
+    # It is only used to make it printing the index object prettier.
+    class Index(object):
+        def __init__(self, info, index, filename):
+            self.filename = filename
+            self.info = info
+            self.index = index
+
+        def __getitem__(self, key):
+            if key == 0:
+                return self.info
+            elif key == 1:
+                return self.index
+            else:
+                raise IndexError()
+
+        def __iter__(self):
+            return (i for i in (self.info, self.index))
+
+        def __repr__(self):
+            return "<{} object for file '{}'>".format(self.__class__.__name__,
+                                                      indexed_filename)
+
+    return Index(info, index, fn)
 
 
 def goto(f, index, chrom, pos):
