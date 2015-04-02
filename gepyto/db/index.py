@@ -26,6 +26,7 @@ import functools
 
 import numpy as np
 
+
 MAGIC_NUMBER = 10 ** 9  # This should be larger than any indexed position.
 
 
@@ -139,9 +140,8 @@ def build_index(fn, chrom_col, pos_col, delimiter='\t', skip_lines=0,
             if chrom not in encoding["chromosomes"]:
                 encoding["current_key"] += 1
                 encoding["chromosomes"][chrom] = encoding["current_key"]
-            
-            return encoding["chromosomes"][chrom] * MAGIC_NUMBER + pos
 
+            return encoding["chromosomes"][chrom] * MAGIC_NUMBER + pos
 
         # Bind some parameters so that function calls look nicer.
         get_locus = functools.partial(
@@ -320,7 +320,6 @@ def goto(f, index, chrom, pos):
     # it's a direct hit.
     if boundary == 0:
         logging.debug("Locus before first index.")
-        return False
 
     left = index[boundary - 1, 1]
     left_code = index[boundary, 0]
