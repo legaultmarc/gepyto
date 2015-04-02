@@ -54,6 +54,24 @@ class TestIndex(unittest.TestCase):
         os.remove(cls.fn)
         os.remove(cls.fn + ".gtidx")
 
+    def test_index_dict_format(self):
+        db.index.build_index(TestIndex.fn, 0, 1, index_rate=0.9)
+        idx = db.index.get_index(TestIndex.fn)
+        info, index = idx
+        self.assertEqual(info["chrom_col"], 0)
+        self.assertEqual(info["pos_col"], 1)
+        self.assertEqual(info["delimiter"], "\t")
+
+    def test_index_format_unique_loci(self):
+        db.index.build_index(TestIndex.fn, 0, 1, index_rate=0.9)
+        idx = db.index.get_index(TestIndex.fn)
+        # Make sure that the indexed rows are all the first (unique).
+        info, index = idx
+        for file_position in index[:, 1]:
+            TestIndex.f.seek(file_position)
+            line = TestIndex.f.readline().rstrip().split("\t")
+            self.assertEqual(line[2], "1")
+
     def test_sparse_queries(self):
         db.index.build_index(TestIndex.fn, 0, 1, index_rate=0.9)
         idx = db.index.get_index(TestIndex.fn)
