@@ -23,7 +23,7 @@ import traceback
 
 from .. import settings
 from ..reference import Reference, check_indel_reference
-from ..db import query_ensembl, get_url_prefix
+from ..db.ensembl import query_ensembl, get_url_prefix
 from . import genes
 
 

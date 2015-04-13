@@ -29,7 +29,7 @@ except ImportError:
     from urllib.request import urlopen, Request
 
 from .. import settings
-from ..db import query_ensembl
+from ..db.ensembl import query_ensembl
 from ..db.appris import get_category_for_transcript
 from . import sequences
 

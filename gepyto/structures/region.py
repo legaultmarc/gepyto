@@ -295,6 +295,7 @@ def get_telomere(chromosome):
     This is done by connecting to the UCSC MySQL server.
 
     """
+    chromosome = str(chromosome)
     telomeres = _query_ucsc_gap_table(chromosome, "telomere")
     assert len(telomeres) == 2, ("UCSC did not return two telomeres (chrom={}"
                                  ").".format(chromosome))

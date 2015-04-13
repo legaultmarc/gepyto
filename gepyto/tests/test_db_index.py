@@ -17,11 +17,11 @@ import string
 import random
 import os
 
-from .. import db
+from ..db.index import build_index, get_index, goto, ChromosomeNotIndexed
 
 
 class TestIndex(unittest.TestCase):
-    """Tests the db.index module.
+    """Tests the index module.
 
     We make sure that file indexing works.
 
@@ -55,16 +55,16 @@ class TestIndex(unittest.TestCase):
         os.remove(cls.fn + ".gtidx")
 
     def test_index_dict_format(self):
-        db.index.build_index(TestIndex.fn, 0, 1, index_rate=0.9)
-        idx = db.index.get_index(TestIndex.fn)
+        build_index(TestIndex.fn, 0, 1, index_rate=0.9)
+        idx = get_index(TestIndex.fn)
         info, index = idx
         self.assertEqual(info["chrom_col"], 0)
         self.assertEqual(info["pos_col"], 1)
         self.assertEqual(info["delimiter"], "\t")
 
     def test_index_format_unique_loci(self):
-        db.index.build_index(TestIndex.fn, 0, 1, index_rate=0.9)
-        idx = db.index.get_index(TestIndex.fn)
+        build_index(TestIndex.fn, 0, 1, index_rate=0.9)
+        idx = get_index(TestIndex.fn)
         # Make sure that the indexed rows are all the first (unique).
         info, index = idx
         for file_position in index[:, 1]:
@@ -73,8 +73,8 @@ class TestIndex(unittest.TestCase):
             self.assertEqual(line[2], "1")
 
     def test_sparse_queries(self):
-        db.index.build_index(TestIndex.fn, 0, 1, index_rate=0.9)
-        idx = db.index.get_index(TestIndex.fn)
+        build_index(TestIndex.fn, 0, 1, index_rate=0.9)
+        idx = get_index(TestIndex.fn)
 
         loci = TestIndex.positions
         random.shuffle(loci)
@@ -83,52 +83,52 @@ class TestIndex(unittest.TestCase):
             if chrom in idx[0]["chrom_codes"]:
                 # Search the entry.
                 self.assertTrue(
-                    db.index.goto(TestIndex.f, idx, chrom, pos)
+                    goto(TestIndex.f, idx, chrom, pos)
                 )
 
         # Negative examples
         for chrom, pos in [(1, 0), ("X", 1), (3, 10), ("Y", 3)]:
             try:
                 self.assertFalse(
-                    db.index.goto(TestIndex.f, idx, chrom, pos)
+                    goto(TestIndex.f, idx, chrom, pos)
                 )
-            except db.index.ChromosomeNotIndexed:
+            except ChromosomeNotIndexed:
                 # If chromosomes are not indexed, we expect gepyto to tell
                 # you without returning True or False.
                 pass
 
     def test_full_queries(self):
-        db.index.build_index(TestIndex.fn, 0, 1, index_rate=1)
-        idx = db.index.get_index(TestIndex.fn)
+        build_index(TestIndex.fn, 0, 1, index_rate=1)
+        idx = get_index(TestIndex.fn)
 
         loci = TestIndex.positions
         random.shuffle(loci)
         for chrom, pos, _ in loci:
             # Search the entry.
             self.assertTrue(
-                db.index.goto(TestIndex.f, idx, chrom, pos)
+                goto(TestIndex.f, idx, chrom, pos)
             )
 
         # Negative examples
         for chrom, pos in [(1, 0), ("X", 1), (3, 10), ("Y", 3)]:
             self.assertFalse(
-                db.index.goto(TestIndex.f, idx, chrom, pos)
+                goto(TestIndex.f, idx, chrom, pos)
             )
 
     def test_repeated_regions(self):
-        db.index.build_index(TestIndex.fn, 0, 1, index_rate=0.8)
-        idx = db.index.get_index(TestIndex.fn)
+        build_index(TestIndex.fn, 0, 1, index_rate=0.8)
+        idx = get_index(TestIndex.fn)
 
         loci = TestIndex.positions
         random.shuffle(loci)
         for chrom, pos, _ in loci:
             try:
-                db.index.goto(TestIndex.f, idx, chrom, pos)
+                goto(TestIndex.f, idx, chrom, pos)
                 # The column should always be one.
                 line = TestIndex.f.readline().rstrip().split("\t")
                 self.assertEqual(line[0], str(chrom))
                 self.assertEqual(line[1], str(pos))
                 self.assertEqual(line[2], "1")
 
-            except db.index.ChromosomeNotIndexed:
+            except ChromosomeNotIndexed:
                 pass

@@ -15,7 +15,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 import unittest
 
 import numpy as np
-from .. import structures as struct
+from ..structures import variants, genes, sequences
 
 
 class TestVariant(unittest.TestCase):
@@ -36,21 +36,21 @@ class TestVariant(unittest.TestCase):
         self.indel_rs = "rs72301544"
 
         # Simple variations
-        self.snp = struct.variants.SNP(chrom="19", pos=55663495,
+        self.snp = variants.SNP(chrom="19", pos=55663495,
                                        rs=self.snp_rs, ref="C", alt="T")
-        self.indel = struct.variants.Indel(chrom="19", pos=55663539,
+        self.indel = variants.Indel(chrom="19", pos=55663539,
                                            rs=self.indel_rs,
                                            ref="TTC", alt="T")
 
         # Insertions
         self.insertion_rs = "rs11273285"
-        self.insertion = struct.variants.Indel(chrom="2", pos=221032,
+        self.insertion = variants.Indel(chrom="2", pos=221032,
                                                rs=self.insertion_rs,
                                                ref="T", alt="TCAGGCACGTGG")
 
         # Deletions
         self.deletion_rs = "rs376881461"
-        self.deletion = struct.variants.Indel(chrom="1", pos=873775,
+        self.deletion = variants.Indel(chrom="1", pos=873775,
                                               rs=self.deletion_rs,
                                               ref="CAGAGCCT", alt="C")
 
@@ -78,43 +78,43 @@ class TestVariant(unittest.TestCase):
         self.assertEqual("1c\trs376881461", test_format.format(self.deletion))
 
     def test_snp(self):
-        snp = struct.variants.SNP.from_ensembl_api(self.snp_rs)
+        snp = variants.SNP.from_ensembl_api(self.snp_rs)
         self.assertEqual(snp, [self.snp])
 
     def test_indel(self):
-        indel = struct.variants.Indel.from_ensembl_api(self.indel_rs)
+        indel = variants.Indel.from_ensembl_api(self.indel_rs)
         self.assertEqual(indel, [self.indel])
 
     def test_insertion(self):
-        indel = struct.variants.Indel.from_ensembl_api(self.insertion_rs)
+        indel = variants.Indel.from_ensembl_api(self.insertion_rs)
         self.assertEqual(indel, [self.insertion])
 
     def test_deletion(self):
-        indel = struct.variants.ShortVariant.from_ensembl_api(self.deletion_rs)
+        indel = variants.ShortVariant.from_ensembl_api(self.deletion_rs)
         self.assertEqual(indel, [self.deletion])
 
     def test_snp_init_from_str(self):
-        snp = struct.variants.SNP.from_str("chr19:55663495_C/T")
+        snp = variants.SNP.from_str("chr19:55663495_C/T")
         snp[0].rs = self.snp_rs
 
         self.assertEqual(snp, [self.snp])
 
     def test_variant_in(self):
-        snp_g_in = struct.genes.Gene(build="GRCh37", chrom="19",
+        snp_g_in = genes.Gene(build="GRCh37", chrom="19",
                                      start=55653495, end=55673495, xrefs={},
                                      strand=1, transcripts=[])
 
         self.assertTrue(self.snp.in_gene(snp_g_in))
         self.assertTrue(self.indel.in_gene(snp_g_in))
 
-        snp_g_out = struct.genes.Gene(build="GRCh37", chrom="19",
+        snp_g_out = genes.Gene(build="GRCh37", chrom="19",
                                       start=15653495, end=15673495, xrefs={},
                                       strand=1, transcripts=[])
 
         self.assertFalse(self.snp.in_gene(snp_g_out))
         self.assertFalse(self.indel.in_gene(snp_g_out))
 
-        snp_g_out2 = struct.genes.Gene(build="GRCh37", chrom="18",
+        snp_g_out2 = genes.Gene(build="GRCh37", chrom="18",
                                        start=55653495, end=55673495, xrefs={},
                                        strand=1, transcripts=[])
 
@@ -122,10 +122,10 @@ class TestVariant(unittest.TestCase):
         self.assertFalse(self.indel.in_gene(snp_g_out2))
 
     def test_variant_comparison(self):
-        snp1 = struct.variants.SNP("22", 25855459, "rs12345", "g", "a")
-        snp2 = struct.variants.SNP("22", 25855459, None, "g", "a")  # Same as 1
-        snp3 = struct.variants.SNP("13", 32942179, "rs9567605", "t", "a")
-        indel = struct.variants.Indel("13", 32940014, "rs11571729", "g", "gt")
+        snp1 = variants.SNP("22", 25855459, "rs12345", "g", "a")
+        snp2 = variants.SNP("22", 25855459, None, "g", "a")  # Same as 1
+        snp3 = variants.SNP("13", 32942179, "rs9567605", "t", "a")
+        indel = variants.Indel("13", 32940014, "rs11571729", "g", "gt")
 
         self.assertEqual(snp1, snp2)
         self.assertFalse(snp1 == snp3)
@@ -136,12 +136,12 @@ class TestVariant(unittest.TestCase):
         self.assertTrue(len(set([snp1, snp2, snp3, indel])) == 3)
 
     def test_df(self):
-        snp1 = struct.variants.SNP("22", 25855459, "rs12345", "g", "a")
-        snp2 = struct.variants.SNP("13", 32942179, None, "t", "a")
-        indel = struct.variants.Indel("13", 32940014, "rs11571729", "g", "gt")
+        snp1 = variants.SNP("22", 25855459, "rs12345", "g", "a")
+        snp2 = variants.SNP("13", 32942179, None, "t", "a")
+        indel = variants.Indel("13", 32940014, "rs11571729", "g", "gt")
 
         # Create a dataframe with those variants.
-        df = struct.variants.variant_list_to_dataframe([snp1, snp2, indel])
+        df = variants.variant_list_to_dataframe([snp1, snp2, indel])
         self.assertEqual(list(df["chrom"].values), ["22", "13", "13"])
         self.assertEqual(
             list(df["pos"].values),
@@ -158,14 +158,14 @@ class TestVariant(unittest.TestCase):
         snp1._info = {"test": -1}
         snp2._info = {"test": 0}
         indel._info = {"test": 1}
-        df = struct.variants.variant_list_to_dataframe([snp1, snp2, indel])
+        df = variants.variant_list_to_dataframe([snp1, snp2, indel])
         self.assertEqual(list(df["test"].values), [-1, 0, 1])
 
         # Now make sure there is a problem on inconsistent fields.
         snp2._info["test2"] = "error"
         self.assertRaises(
             AssertionError,
-            struct.variants.variant_list_to_dataframe,
+            variants.variant_list_to_dataframe,
             [snp1, snp2, indel]
         )
 
@@ -176,8 +176,8 @@ class TestGene(unittest.TestCase):
 
     def setUp(self):
         # Gene is BRCA2
-        self.gene_37 = struct.genes.Gene.factory_ensembl_id("ENSG00000139618")
-        self.gene_38 = struct.genes.Gene.factory_ensembl_id(
+        self.gene_37 = genes.Gene.factory_ensembl_id("ENSG00000139618")
+        self.gene_38 = genes.Gene.factory_ensembl_id(
             "ENSG00000139618",
             build="GRCh38"
         )
@@ -233,21 +233,21 @@ class TestSequence(unittest.TestCase):
                         "QIPTIPQDTLGVDFDSGEAKSTDNVLPRTVSVRSSLKKHC")
 
     def test_translation(self):
-        dna_seq = struct.sequences.Sequence("test_dna", self.dna, "DNA")
-        rna_seq = struct.sequences.Sequence("test_rna", self.rna, "RNA")
-        pro_seq = struct.sequences.Sequence("test_pro", self.protein, "AA")
+        dna_seq = sequences.Sequence("test_dna", self.dna, "DNA")
+        rna_seq = sequences.Sequence("test_rna", self.rna, "RNA")
+        pro_seq = sequences.Sequence("test_pro", self.protein, "AA")
 
         self.assertEqual(dna_seq.translate().seq, pro_seq.seq)
         self.assertEqual(rna_seq.translate().seq, pro_seq.seq)
 
     def test_gc_content(self):
-        seq = struct.sequences.Sequence("test", "ATGC", "DNA")
+        seq = sequences.Sequence("test", "ATGC", "DNA")
         self.assertEqual(seq.gc_content(), 0.5)
 
-        seq = struct.sequences.Sequence("test", "TAGTTACTAT", "DNA")
+        seq = sequences.Sequence("test", "TAGTTACTAT", "DNA")
         self.assertEqual(seq.gc_content(), 0.2)
 
     def test_reverse_complement(self):
-        seq = struct.sequences.Sequence("test", "TAGTVTAMCTATK", "DNA")
+        seq = sequences.Sequence("test", "TAGTVTAMCTATK", "DNA")
         expected = "MATAGKTABACTA"
         self.assertEqual(seq.reverse_complement().seq, expected)

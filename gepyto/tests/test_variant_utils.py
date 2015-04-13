@@ -15,7 +15,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import unittest
 
-from .. import utils
+from ..utils import variants
 from ..structures.variants import SNP, Indel
 
 
@@ -41,13 +41,13 @@ class TestVariantUtils(unittest.TestCase):
 
         """
 
-        variants = utils.variants.ensembl_variants_in_region(self.region)
+        region_vars = variants.ensembl_variants_in_region(self.region)
 
         # Testing that some variants are in there is more robust to changes
         # on the Ensembl side (i.e. different builds).
-        self.assertTrue(self.snp in variants)
-        self.assertTrue(self.indel1 in variants)
-        self.assertTrue(self.indel2 in variants)
+        self.assertTrue(self.snp in region_vars)
+        self.assertTrue(self.indel1 in region_vars)
+        self.assertTrue(self.indel2 in region_vars)
 
 if __name__ == '__main__':
     unittest.main()

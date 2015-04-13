@@ -18,7 +18,7 @@ import tempfile
 
 import numpy as np
 
-from .. import formats as fmts
+from ..formats import impute2
 
 
 def compare_lines(l1, l2):
@@ -180,34 +180,34 @@ class TestImpute2Class(unittest.TestCase):
     def test_syntax(self):
         """This is mostly to test the syntax for object initialization. """
         # Reading the three lines
-        f = fmts.impute2.Impute2File(self.f.name)
+        f = impute2.Impute2File(self.f.name)
         lines = [f.readline(), ]
         lines.append(f.readline())
         lines.append(f.readline())
         f.close()
 
         # Test the context manager and iterator compliance.
-        with fmts.impute2.Impute2File(self.f.name) as f:
+        with impute2.Impute2File(self.f.name) as f:
             for i, l in enumerate(f):
                 self.assertTrue(compare_lines(l, lines[i]))
 
         # Make sure using invalid arguments raises error.
         self.assertRaises(
             TypeError,
-            fmts.impute2.Impute2File,
+            impute2.Impute2File,
             self.f.name,
             prob_threshold=0.8
         )
 
         # But if we're in dosage mode, this should work.
-        f = fmts.impute2.Impute2File(
+        f = impute2.Impute2File(
             self.f.name, "dosage", prob_threshold=0.8
         )
         f.close()
 
     def test_proba_reader(self):
         """This is to read the probabilities matrix. """
-        with fmts.impute2.Impute2File(self.f.name) as f:
+        with impute2.Impute2File(self.f.name) as f:
             for i, line in enumerate(f):
                 if i == 0:
                     self.assertTrue(compare_lines(line, self.prob_snp1))
@@ -220,7 +220,7 @@ class TestImpute2Class(unittest.TestCase):
 
     def test_dosage(self):
         """This is to read as dosage vectors. """
-        with fmts.impute2.Impute2File(self.f.name, "dosage") as f:
+        with impute2.Impute2File(self.f.name, "dosage") as f:
             for i, line in enumerate(f):
                 if i == 0:
                     self.assertTrue(compare_dosages(
@@ -249,7 +249,7 @@ class TestImpute2Class(unittest.TestCase):
     def test_dosage_maf(self):
         """Test the maf computation with different prob threshold."""
         # Checking for probability threshold of 0
-        with fmts.impute2.Impute2File(self.f2.name, "dosage") as f:
+        with impute2.Impute2File(self.f2.name, "dosage") as f:
             self.assertTrue(compare_dosages(
                 self,
                 f.readline(),
@@ -257,7 +257,7 @@ class TestImpute2Class(unittest.TestCase):
             ))
 
         # Checking for probability threshold of 0.9
-        with fmts.impute2.Impute2File(self.f2.name, "dosage",
+        with impute2.Impute2File(self.f2.name, "dosage",
                                       prob_threshold=0.9) as f:
             self.assertTrue(compare_dosages(
                 self,
@@ -267,7 +267,7 @@ class TestImpute2Class(unittest.TestCase):
 
     def test_hard_call(self):
         """Test the hard calling of imputed markers."""
-        with fmts.impute2.Impute2File(self.f.name, "hard_call") as f:
+        with impute2.Impute2File(self.f.name, "hard_call") as f:
             for i, line in enumerate(f):
                 if i == 0:
                     self.assertTrue(compare_dosages(
@@ -293,7 +293,7 @@ class TestImpute2Class(unittest.TestCase):
                 else:
                     raise Exception()
 
-        with fmts.impute2.Impute2File(self.f.name, "hard_call",
+        with impute2.Impute2File(self.f.name, "hard_call",
                                       prob_threshold=0.9) as f:
             for i, line in enumerate(f):
                 if i == 0:

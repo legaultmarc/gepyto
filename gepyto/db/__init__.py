@@ -10,9 +10,3 @@ __author__ = "Marc-Andre Legault"
 __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
-
-
-from .ensembl import *
-from .appris import *
-from .index import *
-from .ucsc import *

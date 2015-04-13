@@ -19,7 +19,7 @@ import uuid
 import os
 import gzip
 
-from .. import structures as struct
+from ..structures import variants, genes
 
 
 __all__ = ["cadd_score", ]
@@ -183,7 +183,7 @@ def _parse_annotation(cadd_output):
             # We need to create the variant.
             if var_type == "SNV" and len(ref) == 1 and len(alt) == 1:
                 # Create a SNP.
-                v = struct.variants.SNP(
+                v = variants.SNP(
                     chrom=chrom,
                     pos=pos,
                     ref=ref,
@@ -192,7 +192,7 @@ def _parse_annotation(cadd_output):
                 )
             else:
                 # Create an indel.
-                v = struct.variants.Indel(
+                v = variants.Indel(
                     chrom=chrom,
                     pos=pos,
                     ref=ref,
@@ -211,7 +211,7 @@ def _parse_annotation(cadd_output):
             feature = feature_id
         else:
             # We need to create the transcript.
-            ov_transcripts = struct.genes.Transcript.factory_position(
+            ov_transcripts = genes.Transcript.factory_position(
                 "chr{}:{}-{}".format(chrom, pos, pos)
             )
             for tr in ov_transcripts:
