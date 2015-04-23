@@ -68,7 +68,7 @@ def setup_package():
         test_suite="gepyto.tests.test_suite",
         keywords="bioinformatics genomics impute2 genetics variant",
         install_requires=["numpy >= 1.8.1", "requests >= 2.4.3",
-                          "pandas >= 0.15"],
+                          "pandas >= 0.15", "pyfaidx >= 0.3.4"],
     )
 
     return
