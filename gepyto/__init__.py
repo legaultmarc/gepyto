@@ -28,8 +28,13 @@ except ImportError:
 import unittest.main
 
 
-def test():
-    unittest.main(
-        module="gepyto.tests",
-        exit=False
-    )
+def test(verbosity=1):
+    import logging
+    import unittest
+    from .tests import test_suite
+
+    logging.disable(logging.INFO)
+
+    unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
+
+    logging.disable(logging.NOTSET)
