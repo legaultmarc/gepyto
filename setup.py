@@ -49,7 +49,6 @@ def setup_package():
         package_data={"gepyto.db": ["data/*", ], },
         classifiers=["Development Status :: 4 - Beta",
                      "Intended Audience :: Developers",
-                     "License :: CC BY-NC 4.0",
                      "Operating System :: Linux",
                      "Programming Language :: Python",
                      "Programming Language :: Python :: 2.7",
