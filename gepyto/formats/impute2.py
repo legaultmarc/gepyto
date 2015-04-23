@@ -209,54 +209,40 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
                     sex_vector=None):
     """Computes dosage from probabilities (IMPUTE2)."""
     # Type check
-    type(line) is line
+    assert type(line) is _Line
 
-    # Constructing the Pandas data frame
-    data = pd.DataFrame({
-        "d1": line.probabilities[:, 0],
-        "d2": line.probabilities[:, 1],
-        "d3": line.probabilities[:, 2],
-    })
+    # We set the dosage as being the expected number of "a2" alleles for
+    # all samples.
+    # Given that the rows represent p_aa, p_ab, p_bb, we have that
+    # E(#b) = 2 * p_bb + p_ab, the dosage.
+    dosage = 2 * line.probabilities[:, 2] + line.probabilities[:, 1]
 
-    # Getting the maximal probabilities for each sample
-    data["dmax"] = data.max(axis=1)
+    # Probability filtering. We mask samples with low probabilities.
+    if prob_threshold > 0:
+        dosage[~np.any(line.probabilities > prob_threshold, axis=1)] = np.nan
 
-    # Computing the A1 frequency
+    # Compute the maf.
+    mac = np.nansum(dosage)
+    maf = mac / (2 * np.sum(~np.isnan(dosage)))
+
+    # If maf > 0.5, we need to flip.
+    major, minor = (line.a1, line.a2)
+    if maf > 0.5:
+        maf = 1 - maf
+        dosage = 2 - dosage  # 0 -> 2, 1 -> 1, 2 -> 0.
+        major, minor = minor, major
+
     if is_chr23:
         # TODO: Implement this, please
         raise NotImplementedError("dosage for chromosome 23 is not yet "
                                   "supported (because dosage is computed "
                                   "differently for males on chromosome 23)")
 
-    else:
-        sub_data = data[data.dmax >= prob_threshold][["d1", "d2", "d3"]]
-        count = Counter(sub_data.idxmax(axis=1))
-        total_count = (sum(count.values()) * 2)
-        a1_count = ((count["d1"] * 2) + count["d2"])
-        a1_freq = a1_count / total_count
-
-    # Computing the dosage
-    minor_allele = "d1"
-    minor = line.a1
-    major = line.a2
-    maf = a1_freq
-    minor_count = a1_count
-    if a1_freq >= 0.5:
-        minor_allele = "d3"
-        minor = line.a2
-        major = line.a1
-        maf = 1 - a1_freq
-        minor_count = total_count - a1_count
-    data["dosage"] = (data[minor_allele] + (data.d2 / 2)) * 2
-
-    # Setting values to NaN when max prob is lower than threshold
-    data.loc[data.dmax < prob_threshold, :] = np.nan
-
-    return (data.dosage.values, {
+    return (dosage, {
         "major": major,
         "minor": minor,
         "maf": maf,
-        "minor_allele_count": minor_count,
+        "minor_allele_count": mac,
         "name": line.name,
         "chrom": line.chrom,
         "pos": line.pos,

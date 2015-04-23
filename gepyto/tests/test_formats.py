@@ -21,6 +21,14 @@ import numpy as np
 from ..formats import impute2
 
 
+def compare_vectors(v1, v2):
+    try:
+        np.testing.assert_array_almost_equal(v1, v2)
+    except AssertionError:
+        return False
+    return True
+
+
 def compare_lines(l1, l2):
     """Compare line tuples. """
     # Compare the first 4 elements (snpid, chrom, pos, a1, a2).
@@ -37,16 +45,16 @@ def compare_dosages(self, d1, d2):
     v2, info2 = d2
 
     for k in info1:
-        if k != "maf":
-            self.assertEqual(info1[k], info2[k])
-        else:
+        if k == "maf":
             self.assertAlmostEqual(info1[k], info2[k])
+        elif k == "minor_allele_count":
+            self.assertEqual(int(info1[k]), int(info2[k]))
+        else:
+            self.assertEqual(info1[k], info2[k])
 
     if v1.dtype is np.dtype(float):
         # Checking the dosage values (nan != nan in numpy)
-        v1_nan = np.isnan(v1)
-        v2_nan = np.isnan(v2)
-        return ((v1 == v2) | (v1_nan & v2_nan)).all()
+        return compare_vectors(v1, v2)
 
     if v1.dtype.char == "U" or v1.dtype.char == "S":
         return (v1 == v2).all()
@@ -115,30 +123,33 @@ class TestImpute2Class(unittest.TestCase):
             "T",
             np.array([[1, 0, 0], [0.1, 0.3, 0.6], [0.1, 0.35, 0.55],
                       [0, 1, 0]]),
+            # AA, TT, TT, AT
+            # 0, 1.5, 1.45, 1
         )
 
         self.dosage_snp1 = (
             np.array([0., 0.002, 1.003]),
-            {"minor": "G", "major": "A", "maf": 1 / 6.0, "name": "rs12345",
+            {"minor": "G", "major": "A", "maf": 1.005 / 6.0, "name": "rs12345",
              "chrom": "1", "pos": 1231415, "minor_allele_count": 1}
         )
 
         self.dosage_snp2 = (
             np.array([0.130, 0.099, 2]),
-            {"minor": "C", "major": "T", "maf": 2 / 6.0, "name": "rs23456",
+            {"minor": "C", "major": "T", "maf": 2.229 / 6.0, "name": "rs23456",
              "chrom": "1", "pos": 3214569, "minor_allele_count": 2}
         )
 
         self.dosage_indel = (
-            np.array([0.130, 1, 2]),
-            {"minor": "TC", "major": "T", "maf": 0.5, "name": "rs23457",
+            np.array([1.87, 1, 0]),
+            {"minor": "T", "major": "TC", "maf": 2.87 / 6.0, "name": "rs23457",
              "chrom": "1", "pos": 3214570, "minor_allele_count": 3}
         )
 
         self.dosage_snp3_thresh_0 = (
-            np.array([2, 0.5, 0.55, 1]),
-            {"minor": "A", "major": "T", "maf": 3 / 8.0, "name": "rs1234567",
-             "chrom": "1", "pos": 1234567, "minor_allele_count": 3},
+            np.array([0, 1.5, 1.45, 1]),
+            {"minor": "T", "major": "A", "maf": 3.95 / 8.0,
+             "name": "rs1234567", "chrom": "1", "pos": 1234567,
+             "minor_allele_count": 3},
         )
 
         self.dosage_snp3_thresh_9 = (
@@ -258,7 +269,7 @@ class TestImpute2Class(unittest.TestCase):
 
         # Checking for probability threshold of 0.9
         with impute2.Impute2File(self.f2.name, "dosage",
-                                      prob_threshold=0.9) as f:
+                                 prob_threshold=0.9) as f:
             self.assertTrue(compare_dosages(
                 self,
                 f.readline(),
@@ -294,7 +305,7 @@ class TestImpute2Class(unittest.TestCase):
                     raise Exception()
 
         with impute2.Impute2File(self.f.name, "hard_call",
-                                      prob_threshold=0.9) as f:
+                                 prob_threshold=0.9) as f:
             for i, line in enumerate(f):
                 if i == 0:
                     self.assertTrue(compare_dosages(
