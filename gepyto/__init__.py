@@ -25,9 +25,6 @@ except ImportError:
     __version__ = None
 
 
-import unittest.main
-
-
 def test(verbosity=1):
     import logging
     import unittest

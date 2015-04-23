@@ -15,4 +15,4 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import unittest
 
-test_suite = unittest.defaultTestLoader.discover(".")
+test_suite = unittest.defaultTestLoader.discover(__name__)
