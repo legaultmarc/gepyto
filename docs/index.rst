@@ -19,8 +19,6 @@ Contents:
 
    formats.rst
 
-   annotation.rst
-
    utils.rst
 
 

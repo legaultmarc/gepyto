@@ -21,7 +21,6 @@ losing time writing code to handle HTTP requests and database queries.
 This project will use IPython notebooks for feature demonstrations. They are
 available both in the `demos` directory or through nbviewer:
 
-- [Variant annotation](http://nbviewer.ipython.org/github/legaultmarc/gepyto/blob/master/demos/Variant%20Annotation.ipynb)
 - [Sequence analysis](http://nbviewer.ipython.org/github/legaultmarc/gepyto/blob/master/demos/Sequence%20analysis.ipynb)
 
 We didn't write demos yet, but we have the nice ``gepyto.formats`` module which
