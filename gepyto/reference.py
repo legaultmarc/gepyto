@@ -22,7 +22,7 @@ import re
 from collections import namedtuple
 
 from . import settings
-from . import db
+from .db.ensembl import query_ensembl
 
 
 class _RemoteChromosome(object):
@@ -39,7 +39,7 @@ class _RemoteChromosome(object):
 
     def do_query(self, start, end):
         start, end = sorted([start, end])
-        res = db.ensembl.query_ensembl(
+        res = query_ensembl(
             self.url.format(start=start, end=end - 1)
         )
 
