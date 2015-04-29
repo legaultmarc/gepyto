@@ -13,7 +13,7 @@ from setuptools import setup, find_packages
 
 MAJOR = 0
 MINOR = 9
-MICRO = 1
+MICRO = 2
 VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
 
 
