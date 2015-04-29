@@ -236,7 +236,7 @@ def get_index(fn):
     :type fn: str
 
     :returns: The numpy array representing the actual index.
-    :rtype: :py:module:`numpy.ndarray`
+    :rtype: :py:class:`numpy.ndarray`
 
     """
 
