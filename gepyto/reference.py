@@ -21,8 +21,10 @@ import functools
 import re
 from collections import namedtuple
 
+from pyfaidx import Fasta
+
 from . import settings
-from .db.ensembl import query_ensembl
+from .db.ensembl import query_ensembl, get_url_prefix
 
 
 class _RemoteChromosome(object):
@@ -43,6 +45,9 @@ class _RemoteChromosome(object):
             self.url.format(start=start, end=end - 1)
         )
 
+        if res is None:
+            raise TypeError("Invalid remote region query.")
+
         # Note the "comp" field is ignored (see pyfaidx.Sequence).
         seq_obj = namedtuple("Sequence", ["name", "seq", "start", "end"])
         return seq_obj(res["id"], res["seq"], start, end)
@@ -62,14 +67,10 @@ class _RemoteReference(object):
 
     """
     def __init__(self, ref):
-        if ref not in ("GRCh37", "GRCh38"):
-            raise ValueError("Supported builds are GRCh37 and GRCh38.")
-
-        self.url = "http://{build}.rest.ensembl.org/sequence/region/".format(
-            build=ref
+        self.url = "{}sequence/region/homo_sapiens/".format(
+            get_url_prefix(ref)
         )
-
-        self.url += "homo_sapiens/{chrom}"
+        self.url += "{chrom}"
 
     def __getitem__(self, key):
         """This is to implement the ref[] behaviour.
@@ -113,8 +114,6 @@ class Reference(object):
 
     """
     def __init__(self, remote=False):
-        from pyfaidx import Fasta
-
         if not remote:
             try:
                 self.ref = Fasta(settings.REFERENCE_PATH)
@@ -177,7 +176,7 @@ class Reference(object):
 
     def get_nucleotide(self, chrom, pos):
         """Get the nucleotide at the given genomic position. """
-        return self.get_sequence(chrom, pos, length=1)
+        return self.get_sequence(str(chrom), pos, length=1)
 
     def get_sequence(self, chrom, start, end=None, length=None):
         """Get the nucleotide sequence at the given genomic locus.
@@ -208,7 +207,7 @@ class Reference(object):
             end = start + length - 1
 
         try:
-            seq = self.ref[chrom][start - 1: end]
+            seq = self.ref[str(chrom)][start - 1: end]
         except KeyError:
             seq = None
 
