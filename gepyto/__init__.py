@@ -30,7 +30,7 @@ def test(verbosity=1):
     import unittest
     from .tests import test_suite
 
-    logging.disable(logging.INFO)
+    logging.disable(logging.CRITICAL)
 
     unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
 

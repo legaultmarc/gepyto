@@ -14,7 +14,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
 import unittest
-import logging
 
 from ..reference import Reference, InvalidMapping
 

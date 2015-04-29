@@ -13,10 +13,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
 import unittest
-import logging
-
-
-logging.disable(logging.CRITICAL)
 
 
 test_suite = unittest.defaultTestLoader.discover(__name__)
