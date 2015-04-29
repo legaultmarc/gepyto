@@ -46,7 +46,7 @@ class _RemoteChromosome(object):
         )
 
         if res is None:
-            raise TypeError("Invalid remote region query.")
+            raise InvalidMapping("Invalid remote region query.")
 
         # Note the "comp" field is ignored (see pyfaidx.Sequence).
         seq_obj = namedtuple("Sequence", ["name", "seq", "start", "end"])

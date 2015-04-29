@@ -14,8 +14,9 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
 import unittest
+import logging
 
-from ..reference import Reference
+from ..reference import Reference, InvalidMapping
 
 
 class TestReference(unittest.TestCase):
@@ -30,8 +31,24 @@ class TestReference(unittest.TestCase):
 
     def test_get_nucleotide(self):
         """Tests the 'test_get_nucleotide' function."""
-        pass
+        self.assertEqual(self.remote_ref.get_nucleotide(22, 25855459), "G")
+        self.assertEqual(self.remote_ref.get_nucleotide(22, 25855460), "A")
 
     def test_get_sequence(self):
         """Tests the 'get_sequence' function."""
-        pass
+        self.assertEqual(
+            self.remote_ref.get_sequence(22, 25855459, length=5),
+            "GACTT"
+        )
+
+        self.assertEqual(
+            self.remote_ref.get_sequence(22, 25855459, 25855463),
+            "GACTT"
+        )
+
+        self.assertRaises(
+            InvalidMapping,
+            self.remote_ref.get_sequence,
+            30, 1234,
+            length=3
+        )

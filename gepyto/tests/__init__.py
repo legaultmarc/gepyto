@@ -1,4 +1,3 @@
-
 # This file is part of gepyto.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
@@ -14,5 +13,10 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
 import unittest
+import logging
+
+
+logging.disable(logging.CRITICAL)
+
 
 test_suite = unittest.defaultTestLoader.discover(".")
