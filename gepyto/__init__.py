@@ -25,11 +25,13 @@ except ImportError:
     __version__ = None
 
 
-import unittest.main
+def test(verbosity=1):
+    import logging
+    import unittest
+    from .tests import test_suite
 
+    logging.disable(logging.INFO)
 
-def test():
-    unittest.main(
-        module="gepyto.tests",
-        exit=False
-    )
+    unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
+
+    logging.disable(logging.NOTSET)

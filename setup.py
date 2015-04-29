@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # How to build source distribution
 # python setup.py sdist --format bztar
@@ -41,7 +42,14 @@ def setup_package():
         version=VERSION,
         description=("Utilities and tools to interface with genomic databases "
                      "and to facilitate common bioinformatics tasks."),
-        author="Marc-Andre Legault",
+        long_description=("This package provides abstractions and utilities "
+                          "for common genomics tasks. It includes objects to "
+                          "easily fetch and organize genetic variants, query "
+                          "important public databases and do some basic "
+                          "consistency and quality checks. It is a package "
+                          "aimed at developers specialized in bioinformatics. "
+                          ""),
+        author=u"Marc-André Legault",
         author_email="legaultmarc@gmail.com",
         url="https://github.com/legaultmarc/gepyto",
         license="CC BY-NC 4.0",
@@ -60,7 +68,7 @@ def setup_package():
         test_suite="gepyto.tests.test_suite",
         keywords="bioinformatics genomics impute2 genetics variant",
         install_requires=["numpy >= 1.8.1", "requests >= 2.4.3",
-                          "pandas >= 0.15"],
+                          "pandas >= 0.15", "pyfaidx >= 0.3.4"],
     )
 
     return

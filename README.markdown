@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/legaultmarc/gepyto.svg?branch=master)](https://travis-ci.org/legaultmarc/gepyto)
 [![Documentation Status](https://readthedocs.org/projects/gepyto/badge/?version=latest)](https://readthedocs.org/projects/gepyto/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/gepyto.svg)](http://badge.fury.io/py/gepyto)
 
 
 # Introduction
@@ -29,22 +30,30 @@ adds functionality to parse both ``Impute2`` and ``SeqXML`` files.
 # Installation
 ## For users
 
-First, download gepyto using either the "Download ZIP" button or by using the
-``git clone https://github.com/legaultmarc/gepyto.git`` command. After
-downloading (and extracting if needed), navigate to the directory and run the
-command:
+The easiest way to install is to simply use pip:
 
 ```shell
+pip install gepyto
+```
+
+If you want the most recent version, you should install from the Github repo.
+
+```shell
+git clone https://github.com/legaultmarc/gepyto.git
+cd gepyto
 python setup.py install
 ```
 
-This will install the package into your current Python (so if you want to use
-it in a virtual environment, make sure you activate it first).
+You can run the tests from a Python interactive session using:
+```python
+import gepyto
+gepyto.test()
+```
 
-You can also test the package using:
-
-```shell
-python setup.py test
+If you want a more detailed output, use:
+```python
+import gepyto
+gepyto.test(2)
 ```
 
 Note that the test coverage is fairly low for now. Don't hesitate to contact us
