@@ -319,6 +319,7 @@ def get_centromere(chromosome):
     This is done by connecting to the UCSC MySQL server.
 
     """
+    chromosome = str(chromosome)
     centromere = _query_ucsc_gap_table(chromosome, "centromere")
     assert len(centromere) == 1, "UCSC returned {} centromere(s).".format(
         len(centromere)
