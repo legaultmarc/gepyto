@@ -24,6 +24,8 @@ import pandas as pd
 
 import gzip
 
+from .utils import get_opener
+
 _Line = namedtuple(
     "Line",
     ["name", "chrom", "pos", "a1", "a2", "probabilities"]
@@ -80,13 +82,7 @@ class Impute2File(object):
 
     def __init__(self, fn, mode=LINE, **kwargs):
         self._filename = fn
-
-        if fn.endswith(".gz"):
-            opener = gzip.open
-        else:
-            opener = functools.partial(open, mode="r")
-
-        self._file = opener(fn)
+        self._file = get_opener(fn)(fn)  # get_opener returns a function.
 
         assert mode in (DOSAGE, LINE, HARD_CALL)
         self._mode = mode
