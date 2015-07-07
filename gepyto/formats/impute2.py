@@ -228,8 +228,9 @@ def _compute_dosage(line, prob_threshold=0, is_chr23=False,
     # If maf > 0.5, we need to flip.
     major, minor = (line.a1, line.a2)
     if maf > 0.5:
-        maf = 1 - maf
         dosage = 2 - dosage  # 0 -> 2, 1 -> 1, 2 -> 0.
+        mac = np.nansum(dosage)
+        maf = 1 - maf
         major, minor = minor, major
 
     if is_chr23:

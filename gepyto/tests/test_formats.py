@@ -48,7 +48,7 @@ def compare_dosages(self, d1, d2):
         if k == "maf":
             self.assertAlmostEqual(info1[k], info2[k])
         elif k == "minor_allele_count":
-            self.assertEqual(int(info1[k]), int(info2[k]))
+            self.assertEqual(round(info1[k]), round(info2[k]))
         else:
             self.assertEqual(info1[k], info2[k])
 
@@ -130,26 +130,26 @@ class TestImpute2Class(unittest.TestCase):
         self.dosage_snp1 = (
             np.array([0., 0.002, 1.003]),
             {"minor": "G", "major": "A", "maf": 1.005 / 6.0, "name": "rs12345",
-             "chrom": "1", "pos": 1231415, "minor_allele_count": 1}
+             "chrom": "1", "pos": 1231415, "minor_allele_count": 1.005}
         )
 
         self.dosage_snp2 = (
             np.array([0.130, 0.099, 2]),
             {"minor": "C", "major": "T", "maf": 2.229 / 6.0, "name": "rs23456",
-             "chrom": "1", "pos": 3214569, "minor_allele_count": 2}
+             "chrom": "1", "pos": 3214569, "minor_allele_count": 2.229}
         )
 
         self.dosage_indel = (
             np.array([1.87, 1, 0]),
             {"minor": "T", "major": "TC", "maf": 2.87 / 6.0, "name": "rs23457",
-             "chrom": "1", "pos": 3214570, "minor_allele_count": 3}
+             "chrom": "1", "pos": 3214570, "minor_allele_count": 2.87}
         )
 
         self.dosage_snp3_thresh_0 = (
             np.array([0, 1.5, 1.45, 1]),
             {"minor": "T", "major": "A", "maf": 3.95 / 8.0,
              "name": "rs1234567", "chrom": "1", "pos": 1234567,
-             "minor_allele_count": 3},
+             "minor_allele_count": 3.95},
         )
 
         self.dosage_snp3_thresh_9 = (
