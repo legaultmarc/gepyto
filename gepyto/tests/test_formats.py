@@ -13,12 +13,16 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
+import os
+import datetime
 import unittest
 import tempfile
 
 import numpy as np
 
 from ..formats import impute2
+from .. import formats as fmts
+from ..structures.sequences import Sequence
 
 
 def compare_vectors(v1, v2):
@@ -330,3 +334,131 @@ class TestImpute2Class(unittest.TestCase):
 
                 else:
                     raise Exception()
+
+
+class TestGTF(unittest.TestCase):
+    """Test the GTF file parser."""
+    def setUp(self):
+        self.cls = fmts.gtf.GTFFile
+
+    def test_real_life_body(self):
+        ans = [
+            ("O60503", "UniProtKB", "Chain", 1, 1353, None, None, None,
+             {"ID": "PRO_0000195708", "Note": "Adenylate cyclase type 9"}),
+            ("O60503", "UniProtKB", "Topological domain", 1, 117, None, None,
+             None, {"Note": "Cytoplasmic", "evidence": "ECO:0000255"}),
+            ("O60503", "UniProtKB", "Transmembrane", 118, 138, None, None,
+             None, {"Note": "Helical", "evidence": "ECO:0000255"}),
+        ]
+
+        # Check line parsing.
+        with BasicGTF() as f:
+            gtf = self.cls(f.name)
+            for i, line in enumerate(gtf):
+                for j in range(len(line)):
+                    self.assertEqual(ans[i][j], line[j])
+            gtf.close()
+
+    def test_real_life_meta(self):
+        with BasicGTF() as f:
+            gtf = self.cls(f.name)
+            self.assertEqual(gtf.gff_version, 3)
+            self.assertEqual(gtf.sequence_regions["O60503"], (1, 1353))
+        gtf.close()
+
+    def test_readline(self):
+        lines = []
+        with BasicGTF() as f:
+            gtf = self.cls(f.name)
+            lines = list(gtf)
+            gtf.close()
+
+        with BasicGTF() as f:
+            gtf = self.cls(f.name)
+            for i in range(len(lines)):
+                self.assertEqual(lines[i], gtf.readline())
+            gtf.close()
+
+    def test_context_mgr(self):
+        with BasicGTF() as f:
+            with self.cls(f.name) as gtf:
+                for i, line in enumerate(gtf):
+                    pass
+            self.assertEqual(i, 2)
+
+    def test_headers(self):
+        f = tempfile.NamedTemporaryFile("w")
+        f.write("""
+#Nonparsed comment here.
+##gff-version 3
+#Nonparsed comment here.
+##source-version myProgram v1.2
+##date 2015-12-29
+##Type DNA my_dna_sequence
+##Type RNA my_rna_sequence
+##Type Protein my_protein_sequence
+#A random comment
+##DNA myseq
+##acggctcggattggcgctggatgatagatcagacgac
+##tccccgcaaactcgggcaggttgatttattagaa
+##end-DNA
+##Protein myprot
+##MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF
+##end-Protein
+#A comment: done with that.
+##sequence-region my_dna_sequence 2341 14510
+""".lstrip())
+        f.seek(0)
+
+        seq1 = ("acggctcggattggcgctggatgatagatcagacgactccccgcaaactcgggcaggttg"
+                "atttattagaa")
+
+        seq2 = "MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF"
+
+        with self.cls(f.name) as gtf:
+            self.assertEqual(gtf.gff_version, 3)
+            self.assertEqual(gtf.source_version["myProgram"], "v1.2")
+            self.assertEqual(
+                gtf.date,
+                datetime.datetime.strptime("2015-12-29", "%Y-%m-%d")
+            )
+            self.assertEqual(gtf.type["my_dna_sequence"], "DNA")
+            self.assertEqual(gtf.type["my_rna_sequence"], "RNA")
+            self.assertEqual(gtf.type["my_protein_sequence"], "Protein")
+            self.assertEqual(
+                gtf.sequences["myseq"],
+                Sequence("myseq", seq1, "DNA")
+            )
+            self.assertEqual(
+                gtf.sequences["myprot"],
+                Sequence("myprot", seq2, "AA")
+            )
+
+        gtf.close()
+        f.close()
+
+
+class BasicGTF(object):
+    def __init__(self):
+        self.f = tempfile.NamedTemporaryFile("w", delete=False)
+        self.f.write("""
+##gff-version 3
+##sequence-region O60503 1 1353
+O60503	UniProtKB	Chain	1	1353	.	.	.	ID=PRO_0000195708;Note=Adenylate cyclase type 9
+O60503	UniProtKB	Topological domain	1	117	.	.	.	Note=Cytoplasmic;evidence=ECO:0000255
+O60503	UniProtKB	Transmembrane	118	138	.	.	.	Note=Helical;evidence=ECO:0000255
+""".lstrip())
+        self.f.seek(0)
+
+    def __enter__(self):
+        return self.f
+
+    def __exit__(self, *args):
+        self.f.close()
+        os.remove(self.f.name)
+
+
+class TestGFF(TestGTF):
+    """Test the GFF binding."""
+    def setUp(self):
+        self.cls = fmts.gff.GFFFile

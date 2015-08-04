@@ -96,6 +96,13 @@ class Sequence(object):
     def __repr__(self):
         return "<Sequence: {}>".format(self.uid)
 
+    def __eq__(self, seq1):
+        return bool(
+            self.uid == seq1.uid and
+            self.seq == seq1.seq and
+            self.seq_type == seq1.seq_type
+        )
+
     @classmethod
     def from_reference(cls, chrom, start, end=None, length=None):
         """Create a Sequence object from a given locus."""

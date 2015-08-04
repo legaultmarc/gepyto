@@ -24,6 +24,7 @@ class TestVariantUtils(unittest.TestCase):
     def setUp(self):
         self.region = "chr19:55663495-55663541"
         self.snp = SNP("19", 55663495, "rs111715315", "C", "T")
+        self.snp2 = SNP("19", 55663533, "rs577473242", "T", "G")
         self.indel1 = Indel("19", 55663539, "rs72301544", "TTC", "T")
         self.indel2 = Indel("19", 55663540, "rs56007758", "TCT", "T")
 
@@ -33,6 +34,7 @@ class TestVariantUtils(unittest.TestCase):
         This should include:
 
         - The SNP:  rs111715315 (chr19:55663495_C/T)
+        - The SNP:  rs577473242 (chr19:55663533_T/G)
         - The Indel: rs72301544 (chr19:55663540_TC/-)
         - The Indel: rs56007758 (chr19:55663541_CT/-)
 
@@ -46,6 +48,7 @@ class TestVariantUtils(unittest.TestCase):
         # Testing that some variants are in there is more robust to changes
         # on the Ensembl side (i.e. different builds).
         self.assertTrue(self.snp in region_vars)
+        self.assertTrue(self.snp2 in region_vars)
         self.assertTrue(self.indel1 in region_vars)
         self.assertTrue(self.indel2 in region_vars)
 

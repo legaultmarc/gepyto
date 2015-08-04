@@ -29,8 +29,9 @@ except ImportError:
     from urllib.request import urlopen, Request
 
 from .. import settings
-from ..db.ensembl import query_ensembl
+from ..db.ensembl import query_ensembl, get_url_prefix
 from ..db.appris import get_category_for_transcript
+from .region import Region
 from . import sequences
 
 
@@ -126,6 +127,15 @@ class Gene(object):
             self.end
         )
 
+    @property
+    def region(self):
+        """Lazily loads the Region object for this Gene."""
+        if hasattr(self, "_region"):
+            return self._region
+        else:
+            self._region = Region(self.chrom, self.start, self.end)
+            return self.region
+
     def __contains__(self, o):
         """Test if an object is in the gene.
 
@@ -137,18 +147,7 @@ class Gene(object):
         object.
 
         """
-        if hasattr(o, "pos"):
-            start = end = int(o.pos)
-        elif hasattr(o, "start") and hasattr(o, "end"):
-            start, end = [int(i) for i in (o.start, o.end)]
-
-        if not hasattr(o, "chrom"):
-            raise TypeError("Testing overlap with gene requires a `chrom` "
-                            "attribute.")
-
-        ret = self.start < start and self.end > end
-        ret = ret and str(self.chrom) == str(o.chrom)
-        return ret
+        return o in self.region 
 
     def get_ortholog_sequences(self):
         """Queries Ensembl to get Sequence objects representing orthologs.
@@ -190,9 +189,8 @@ class Gene(object):
                             "without an 'ensembl_id' in the cross references "
                             "(xrefs).")
 
-        url = ("http://rest.ensembl.org/homology/id/{}?"
-               "content-type=application/json&"
-               "type={}")
+        url = get_url_prefix(settings.BUILD)
+        url += "homology/id/{}?content-type=application/json&type={}"
         url = url.format(self.xrefs["ensembl_id"], homo_types[homo_type])
 
         res = query_ensembl(url)
@@ -250,8 +248,8 @@ class Gene(object):
         :rtype: :py:class:`Gene`
 
         """
-        url = "http://grch37." if build == "GRCh37" else "http://"
-        url += ("rest.ensembl.org/overlap/id/{}"
+        url = get_url_prefix(build)
+        url += ("overlap/id/{}"
                 "?content-type=application/json"
                 "&feature=gene"
                 "&feature=transcript"
@@ -400,9 +398,8 @@ class Gene(object):
 
         elif field == "ensembl_gene_id":
             # Get from Ensembl
-            url = "http://grch37." if build == "GRCh37" else "http://"
-            url += ("rest.ensembl.org/xrefs/id/{}"
-                    "?content-type=application/json")
+            url = get_url_prefix(build)
+            url += "xrefs/id/{}?content-type=application/json"
             url = url.format(query)
 
             response = query_ensembl(url)
@@ -481,6 +478,15 @@ class Transcript(object):
         assert re.match(r"([0-9]{1,2}|MT|X|Y)", self.chrom)
         assert self.start < self.end
 
+    @property
+    def region(self):
+        """Lazily loads the Region object for this Transcript."""
+        if hasattr(self, "_region"):
+            return self._region
+        else:
+            self._region = Region(self.chrom, self.start, self.end)
+            return self.region
+
     def get_sequence(self, seq_type="genomic"):
         """Build a Sequence object representing the transcript.
 
@@ -498,9 +504,8 @@ class Transcript(object):
             raise Exception("Invalid sequence type ({}). Known types are: "
                             "{}".format(seq_type, ", ".join(seq_types)))
 
-        url = ("http://rest.ensembl.org/sequence/id/{}?"
-               "content-type=application/json&"
-               "type={}")
+        url = get_url_prefix(self.build)
+        url += "sequence/id/{}?content-type=application/json&type={}"
         url = url.format(self.enst, seq_type)
 
         res = query_ensembl(url)
@@ -532,8 +537,8 @@ class Transcript(object):
         region = region.lstrip("chr")
         region = region.replace("-", "..")
 
-        url = "http://grch37." if build == "GRCh37" else "http://"
-        url += ("rest.ensembl.org/overlap/region/homo_sapiens/{}"
+        url = get_url_prefix(build)
+        url += ("overlap/region/homo_sapiens/{}"
                 "?feature=transcript"
                 "&content-type=application/json")
         url = url.format(region)
