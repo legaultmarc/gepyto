@@ -21,6 +21,9 @@ import datetime
 import logging
 from collections import namedtuple
 
+from six.moves import urllib
+from six import binary_type
+
 from ..structures.sequences import Sequence
 
 
@@ -44,6 +47,8 @@ class GTFFile(object):
 
         if fn.endswith(".gz"):
             opener = gzip.open
+        elif fn.startswith("http://"):
+            opener = urllib.request.urlopen
         else:
             opener = functools.partial(open, mode="r")
 
@@ -83,6 +88,10 @@ class GTFFile(object):
 
     @staticmethod
     def parse_line(line):
+        # Decode if bytes.
+        if type(line) is binary_type:
+            line = line.decode("utf-8")
+
         assert not line.startswith("#")
         if line.startswith("chr"):
             line = line[3:]
@@ -106,12 +115,14 @@ class GTFFile(object):
                 if attr == "":  # If lines finish with a ';'
                     continue
                 attr = attr.strip()
-                tag = re.match(r"^([A-Za-z][A-Za-z0-9_]*)\s", attr)
+                # We authorize both whitespace or '=' sign for ID=VALUE.
+                # The equals syntax is used by major institutions.
+                tag = re.match(r"^([A-Za-z][A-Za-z0-9_]*)[\s=]", attr)
                 if tag is None:
                     raise InvalidGTF("Invalid tag in attributes field \"{}\"."
                                      "".format(attr))
                 tag = tag.group(1)
-                value = attr[len(tag):].strip()
+                value = attr[len(tag):].strip("= \t")
                 value = value.replace('"', '')
                 parsed_attributes[tag] = value
 
@@ -172,17 +183,24 @@ class GTFFile(object):
         - DNA
         - RNA
         - Protein
+        - sequence-region
 
         If available, all of these will be parsed as attributes to the GTFFile
         object.
 
         """
-        line = next(self._file)
+        try:
+            line = next(self._file)
+        except StopIteration:
+            raise InvalidGTF("File seems to be empty.")
         while line.startswith("#"):
 
             if not line.startswith("##"):
-                line = next(self._file)
-                continue
+                try:
+                    line = next(self._file)
+                    continue
+                except StopIteration:
+                    return
 
             line = line.lstrip("#")
             line = line.split()
@@ -196,7 +214,13 @@ class GTFFile(object):
                 self.source_version[line[1]] = line[2]
 
             elif line[0] == "date":
-                self.date = datetime.datetime.strptime(line[1], "%Y-%m-%d")
+                try:
+                    self.date = datetime.datetime.strptime(line[1], "%Y-%m-%d")
+                except ValueError:
+                    msg = ("Could not parse date from GTF header. Expected"
+                           "ISO 8601 format, got '{}'.".format(line[1]))
+                    logging.warning(msg)
+                    self.date = line[1]
 
             elif line[0] == "Type":
                 if line[1] not in ("DNA", "Protein", "RNA"):
@@ -205,7 +229,7 @@ class GTFFile(object):
                                     "".format(line[1]))
                 if len(line) == 2:
                     self.type = line[1]
-                elif len(line == 3):
+                elif len(line) == 3:
                     if not hasattr(self, "type"):
                         self.type = {}
                     self.type[line[2]] = line[1]
@@ -240,6 +264,13 @@ class GTFFile(object):
                     int(line[3])
                 )
 
-            line = next(self._file)
+            try:
+                line = next(self._file)
+            except StopIteration:
+                return
 
         self._line_accumulator = line  # This is not a header line.
+
+
+# Alias for the GFF format.
+GFFFile = GTFFile

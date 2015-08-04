@@ -24,6 +24,7 @@ class TestVariantUtils(unittest.TestCase):
     def setUp(self):
         self.region = "chr19:55663495-55663541"
         self.snp = SNP("19", 55663495, "rs111715315", "C", "T")
+        self.snp2 = SNP("19", 55663533, "rs577473242", "T", "G")
         self.indel1 = Indel("19", 55663539, "rs72301544", "TTC", "T")
         self.indel2 = Indel("19", 55663540, "rs56007758", "TCT", "T")
 
@@ -33,6 +34,7 @@ class TestVariantUtils(unittest.TestCase):
         This should include:
 
         - The SNP:  rs111715315 (chr19:55663495_C/T)
+        - The SNP:  rs577473242 (chr19:55663533_T/G)
         - The Indel: rs72301544 (chr19:55663540_TC/-)
         - The Indel: rs56007758 (chr19:55663541_CT/-)
 
@@ -44,8 +46,9 @@ class TestVariantUtils(unittest.TestCase):
         variants = utils.variants.ensembl_variants_in_region(self.region)
 
         self.assertEqual(variants[0], self.snp)
-        self.assertEqual(variants[1], self.indel1)
-        self.assertEqual(variants[2], self.indel2)
+        self.assertEqual(variants[1], self.snp2)
+        self.assertEqual(variants[2], self.indel1)
+        self.assertEqual(variants[3], self.indel2)
 
 if __name__ == '__main__':
     unittest.main()
