@@ -21,11 +21,19 @@ import re
 
 from .utils import get_opener
 
+
+# This pretty regex captures and validates INFO fields from the VCF spec.
 _INFO_REGEX = re.compile(
     r"^INFO=<ID=(?P<id>.+),Number=(?P<number>[0-9]+|[GA.]),"
      "Type=(?P<type>Integer|Float|Flag|Character|String),"
      "Description=\"(?P<description>.+)\">$"
 )
+
+
+_FILTER_REGEX = re.compile(
+    r"^FILTER=<ID=(?P<id>.+),Description=\"(?P<description>.+)\">$"
+)
+
 
 class VCFFile(object):
     """Class representing a VCF file."""
@@ -35,6 +43,7 @@ class VCFFile(object):
         self._file = get_opener(fn)(fn)  # get_opener returns a function.
 
         self.info = {}
+        self.filters = {}
 
         self._parse_headers()
 
@@ -63,13 +72,18 @@ class VCFFile(object):
                 info_id = info.pop("id")
                 self.info[info_id] = info
 
+            elif line.startswith("FILTER"):
+                applied_filter = self._parse_filter(line)
+                filter_id = applied_filter.pop("id")
+                self.filters[filter_id] = applied_filter
+
             cur = self._file.tell()
             line = next(self._file)
 
         self._file.seek(cur)
 
     def _parse_info(self, s):
-        """Parse and validate an info field into a standardized data structure.
+        """Parse and validate an INFO field into a standardized data structure.
 
         INFO fields have an ID, a number representing their length (A for
         allele and G for genotype are special lengths), a type (Integer, Float,
@@ -80,12 +94,30 @@ class VCFFile(object):
         matcher = _INFO_REGEX.match(s)
         if not matcher:
             raise ValueError("The following INFO line did not validate: \n\n"
-                             "{}".format(line))
+                             "{}".format(s))
 
         # Parse the different fields.
         return {
             "id": matcher.group("id"),
             "number": matcher.group("number"),
             "type": matcher.group("type"),
+            "description": matcher.group("description"),
+        }
+
+    def _parse_filter(self, s):
+        """Parse and validate a FILTER field.
+
+        Expected format is ##FILTER<ID=ID,Description="description">
+
+        """
+        # Validate.
+        matcher = _FILTER_REGEX.match(s)
+        if not matcher:
+            raise ValueError("The following FILTER line did not validate: \n\n"
+                             "{}".format(s))
+
+        # Parse the fields.
+        return {
+            "id": matcher.group("id"),
             "description": matcher.group("description"),
         }
