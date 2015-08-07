@@ -25,6 +25,8 @@ except ImportError:
 import textwrap
 import re
 import collections
+import multiprocessing
+import itertools
 
 import numpy as np
 
@@ -53,6 +55,50 @@ REVERSE_COMPLEMENT_DNA = dict(
     A="T", C="G", G="C", T="A", M="K", R="Y", W="W", S="S", Y="R", K="M",
     V="B", H="D", D="H", B="V",
 )
+
+
+# For both DNA and RNA.
+STOP_CODONS = {"TAA", "TAG", "TGA", "UAA", "UAG", "UGA"}
+
+
+def _build_coding_sequences(orf, s=None):
+        if type(orf) is tuple:
+            orf, s = orf  # map passes arguments as a tuple.
+
+        if s is None:
+            raise TypeError("_build_coding_sequences() takes either a tuple "
+                            "of (orf name, sequence) or the two corresponding "
+                            "distinct arguments.")
+
+        # Sequences are actually: (orf, start, end, sequence)
+        sequences = []
+        start_codons = []
+        i = 0
+        while i + 3 <= len(s):
+            codon = s[i:(i+3)]
+            if codon == "ATG":
+                start_codons.append(i)
+            elif codon in STOP_CODONS:
+                # Close all open sequences.
+                for j in start_codons:
+                    if orf > 0:
+                        start = j + orf - 1
+                        end = (i+3) + orf - 1
+                    else:
+                        start = len(s) - (i+3)
+                        end = len(s) - j
+                    sequences.append(
+                        (orf, start, end, s[j:i])
+                    )
+                start_codons = []
+            elif codon not in DNA_GENETIC_CODE:
+                # This should not happen in a real protein, so we'll close the
+                # sequences.
+                start_codons = []
+
+            i += 3
+
+        return sequences
 
 
 class Sequence(object):
@@ -102,6 +148,9 @@ class Sequence(object):
             self.seq == seq1.seq and
             self.seq_type == seq1.seq_type
         )
+
+    def __len__(self):
+        return len(self.seq)
 
     @classmethod
     def from_reference(cls, chrom, start, end=None, length=None):
@@ -185,7 +234,7 @@ class Sequence(object):
                 raise Exception("Sequence does not start with START codon "
                                 "(ATG).")
 
-        if s[-3:] not in ("TAA", "TAG", "TGA", "UAA", "UAG", "UGA"):
+        if s[-3:] not in STOP_CODONS:
             if not no_check:
                 raise Exception("Sequence does not end with STOP codon.")
         else:
@@ -195,11 +244,66 @@ class Sequence(object):
         return Sequence(
             uid="translated_{}".format(self.uid),
             seq_type="AA",
-            s="".join(
-                [code[s[i:i+3]] for i in range(0, len(s) - 2, 3)]
-            ),
+            s=Sequence._translate(s, code=code),
             info=self.info
         )
+
+    @staticmethod
+    def _translate(s, code=DNA_GENETIC_CODE):
+        """Translate a string. Used internally for translation."""
+        try:
+            s =  "".join(
+                    [code[s[i:i+3]] for i in range(0, len(s) - 2, 3)]
+                )
+        except KeyError as e:
+            raise ValueError("Can't find amino acid for codon '{}'".format(
+                e.message
+            ))
+
+        return s
+
+    def find_coding_sequences(self, cpu=6):
+        """Tries all the ORFs and translates every possible protein.
+
+        :returns: A tuple containing the information of the coding sequence.
+                  (ORF, start, end, sequence)
+        :rtype: tuple
+
+        """
+        orfs = collections.OrderedDict([
+            (1, self.seq),
+            (2, self.seq[1:]),
+            (3, self.seq[2:]),
+            (-1, self.seq[::-1])
+        ])
+        orfs.update([
+            (-2, orfs[-1][1:]),
+            (-3, orfs[-1][2:]),
+        ])
+
+        if cpu == 1:
+            # Single processor.
+            coding_sequences = []
+            for orf, seq in orfs.items():
+                coding_sequences.extend(_build_coding_sequences(orf, seq))
+
+        else:
+            p = multiprocessing.Pool(cpu)
+            coding_sequences = p.map(_build_coding_sequences, orfs.items())
+
+        coding_sequences = list(itertools.chain(*coding_sequences))
+        return coding_sequences
+
+    def find_translations(self, cpu=6):
+        """Finds and translates peptides from any ORF in the sequence."""
+        coding_sequences = self.find_coding_sequences(cpu)
+        peptides = []
+        for i, tu in enumerate(coding_sequences):
+            tu = list(tu)
+            tu[-1] = Sequence._translate(tu[-1])
+            peptides.append(tu)
+
+        return peptides
 
     def reverse_complement(self):
         """Reverse complement the sequence (compatible with IUPAC codes)."""
