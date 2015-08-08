@@ -409,7 +409,6 @@ class Sequence(object):
 
 def _smith_waterman(seq1, seq2, penalties=None):
     """TODO FINISH ME."""
-    raise NotImplementedError()
     if isinstance(seq1, Sequence):
         seq1 = seq1.seq
     if isinstance(seq2, Sequence):
@@ -486,18 +485,17 @@ def _smith_waterman(seq1, seq2, penalties=None):
             j -= 1
 
     # Case 3, seq 1 starts with gaps.
-    # FIXME We need a head system for cases where we need front gaps in both
-    # sequences.
-    if i == 0 and j > 0:
-        extra = seq2[:j]
-        align1 = align1 + "-" * len(extra)
-        align2 = align2 + extra[::-1]
+    head = collections.defaultdict(str)
+    if j > 0:
+        head[2] += seq2[:j][::-1]
+        # align1 = align1 + "-" * len(extra)
+        # align2 = align2 + extra[::-1]
 
     # Case 4, seq 2 starts with gaps.
-    elif j == 0 and i > 0:
-        extra = seq1[:i]
-        align1 = align1 + extra[::-1]
-        align2 = align2 + "-" * len(extra)
+    if i > 0:
+        head[1] += seq1[:i][::-1]
+        # align1 = align1 + extra[::-1]
+        # align2 = align2 + "-" * len(extra)
 
     if tail:
         if tail.get(1):
@@ -506,5 +504,13 @@ def _smith_waterman(seq1, seq2, penalties=None):
         if tail.get(2):
             align2 = tail[2] + align2
             align1 = "-" * len(tail[2]) + align1
+
+    if head:
+        if head.get(1):
+            align1 += head[1]
+            align2 += "-" * len(head[1])
+        if head.get(2):
+            align2 += head[2]
+            align1 += "-" * len(head[2])
 
     return score, align1[::-1], align2[::-1]
