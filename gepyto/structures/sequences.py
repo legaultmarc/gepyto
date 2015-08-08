@@ -23,12 +23,12 @@ except ImportError:
     translate = str.translate
 
 import textwrap
-import re
 import collections
 import multiprocessing
 import itertools
 
 import numpy as np
+from six.moves import range as xrange
 
 from .. import reference
 from .. import settings
@@ -134,7 +134,7 @@ class Sequence(object):
                              "{}".format(seq_type, list(Sequence.types)))
 
         self.uid = uid
-        self.seq = s.upper()
+        self.seq = str(s.upper())
         self.seq_type = seq_type
         self.info = info
         self._annotations = []
@@ -252,9 +252,9 @@ class Sequence(object):
     def _translate(s, code=DNA_GENETIC_CODE):
         """Translate a string. Used internally for translation."""
         try:
-            s =  "".join(
-                    [code[s[i:i+3]] for i in range(0, len(s) - 2, 3)]
-                )
+            s = "".join(
+                [code[s[i:i+3]] for i in xrange(0, len(s) - 2, 3)]
+            )
         except KeyError as e:
             raise ValueError("Can't find amino acid for codon '{}'".format(
                 e.message
@@ -274,7 +274,7 @@ class Sequence(object):
             (1, self.seq),
             (2, self.seq[1:]),
             (3, self.seq[2:]),
-            (-1, self.seq[::-1])
+            (-1, Sequence._str_reverse_complement(self.seq))
         ])
         orfs.update([
             (-2, orfs[-1][1:]),
@@ -310,17 +310,21 @@ class Sequence(object):
         if self.seq_type != "DNA":
             raise NotImplementedError("reverse_complement is only available "
                                       "for DNA sequences.")
-        seq = self.seq[::-1]
-        before, after = zip(*REVERSE_COMPLEMENT_DNA.items())
-        trans = maketrans("".join(before), "".join(after))
-
-        seq = translate(seq, trans)
+        seq = Sequence._str_reverse_complement(self.seq)
         return Sequence(
             uid="reversed_compl_{}".format(self.uid),
             seq_type="DNA",
             s=seq,
             info=self.info
         )
+
+    @staticmethod
+    def _str_reverse_complement(seq):
+        seq = seq[::-1]
+        before, after = zip(*REVERSE_COMPLEMENT_DNA.items())
+        trans = maketrans("".join(before), "".join(after))
+        seq = translate(seq, trans)
+        return seq
 
     def gc_content(self):
         """Computes the GC content for the sequence."""
@@ -367,7 +371,7 @@ class Sequence(object):
         if alphabet is None:
             alphabet = set(s)
         alphabet = sorted(list(alphabet))
-        alphabet = dict(zip(alphabet, range(len(alphabet))))
+        alphabet = dict(zip(alphabet, xrange(len(alphabet))))
         L = len(alphabet)
 
         # Compute the base probabilities for every character.
@@ -379,12 +383,12 @@ class Sequence(object):
 
         # Now we need to compute
         bbc = np.zeros((L, L))
-        for l in range(1, k + 2):
+        for l in xrange(1, k + 2):
             # We need to compute $p_{ij}(l)$ representing the probability of
             # observing the bases i and j separated by l "gaps".
             # We will compute it for all 16 combinations of alleles.
             l_dist_correlations = np.zeros((L, L))
-            for i in range(len(s) - l):
+            for i in xrange(len(s) - l):
                 nuc1 = alphabet[s[i]]
                 nuc2 = alphabet[s[i + l]]
                 l_dist_correlations[nuc1][nuc2] += 1
@@ -401,3 +405,106 @@ class Sequence(object):
         bbc.shape = (1, L * L)
 
         return bbc
+
+
+def _smith_waterman(seq1, seq2, penalties=None):
+    """TODO FINISH ME."""
+    raise NotImplementedError()
+    if isinstance(seq1, Sequence):
+        seq1 = seq1.seq
+    if isinstance(seq2, Sequence):
+        seq2 = seq2.seq
+
+    # Default penalties.
+    if penalties is None:
+        penalties = {
+            "match": 2,
+            "mismatch": -1,
+            "gap": -1
+        }
+    p = penalties
+
+    m = len(seq1) + 1
+    n = len(seq2) + 1
+    mat = np.empty((m, n), dtype=int)
+    pointers = np.zeros((m, n), dtype=int) - 1
+    mat[0, :] = 0
+    mat[:, 0] = 0
+
+    # This implementation will use the naive algorithm to generate the matrix.
+    # Better high performance implementations exist.
+    # Also, affine panelties are not implemented. It's a constant cost per
+    # gap.
+    for i in xrange(1, mat.shape[0]):
+        for j in xrange(1, mat.shape[1]):
+            if seq1[i - 1] == seq2[j - 1]:
+                diag_score = p["match"]
+            else:
+                diag_score = p["mismatch"]
+
+            choices = [
+                0,
+                mat[i - 1, j - 1] + diag_score,
+                mat[i - 1, j] + p["gap"],
+                mat[i, j - 1] + p["gap"]
+            ]
+            max_idx = np.argmax(choices)
+            mat[i, j] = choices[max_idx]
+            pointers[i, j] = max_idx
+
+    # Take the max and trackback.
+    i, j = np.unravel_index(mat.argmax(), mat.shape)
+    # If we did not finish at the bottom right, we need to start off the
+    # alignment with the gaps.
+    align1 = ""
+    align2 = ""
+
+    # Case 1, seq 1 ends with gaps.
+    tail = collections.defaultdict(str)
+    if j < (mat.shape[1] - 1):
+        tail[2] += seq2[j:][::-1]
+
+    # Case 2, seq 2 ends with gaps.
+    if i < (mat.shape[0] - 1):
+        tail[1] += seq1[i:][::-1]
+
+    score = mat[i, j]
+    while mat[i][j] != 0:
+        op = pointers[i, j]
+        if op == 1:
+            align1 += seq1[i - 1]
+            align2 += seq2[j - 1]
+            i -= 1
+            j -= 1
+        elif op == 2:
+            align1 += seq1[i - 1]
+            align2 += "-"
+            i -= 1
+        elif op == 3:
+            align1 += "-"
+            align2 += seq2[j - 1]
+            j -= 1
+
+    # Case 3, seq 1 starts with gaps.
+    # FIXME We need a head system for cases where we need front gaps in both
+    # sequences.
+    if i == 0 and j > 0:
+        extra = seq2[:j]
+        align1 = align1 + "-" * len(extra)
+        align2 = align2 + extra[::-1]
+
+    # Case 4, seq 2 starts with gaps.
+    elif j == 0 and i > 0:
+        extra = seq1[:i]
+        align1 = align1 + extra[::-1]
+        align2 = align2 + "-" * len(extra)
+
+    if tail:
+        if tail.get(1):
+            align1 = tail[1] + align1
+            align2 = "-" * len(tail[1]) + align2
+        if tail.get(2):
+            align2 = tail[2] + align2
+            align1 = "-" * len(tail[2]) + align1
+
+    return score, align1[::-1], align2[::-1]
