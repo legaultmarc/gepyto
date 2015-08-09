@@ -26,6 +26,8 @@ import textwrap
 import collections
 import multiprocessing
 import itertools
+import logging
+logger = logging.getLogger(__name__)
 
 import numpy as np
 from six.moves import range as xrange
@@ -407,21 +409,67 @@ class Sequence(object):
         return bbc
 
 
-def _smith_waterman(seq1, seq2, penalties=None):
-    """TODO FINISH ME."""
+def smith_waterman(seq1, seq2, penalties=None, output="sequences"):
+    """Compute a pairwise local sequence alignment using the Smith Waterman
+    algorithm.
+
+    The output parameter determines how results will be represented:
+
+    If "sequences" is chosen, the two aligned sequences will be returned with
+    gaps represented by dashes ("-").
+
+    If "alignment" is chosen, a single encoded string will be reterned where
+    "M" represents matches, "I" represents insertions, "D" represents deletions
+    and "X" represents mismatches. This is done with respect to the first
+    sequence.
+
+    In any mode, the first returned element is always the raw similarity score.
+    Note that because this is local alignment, gaps at both ends won't be
+    penalized. Also, only one of the potentially many best alignments will be
+    output.
+
+    This implementation is not very optimized. It is not written in a low level
+    language. It can be used for small sequences or for low number of
+    comparisons, but should not be used in large scale products.
+
+    """
     if isinstance(seq1, Sequence):
         seq1 = seq1.seq
     if isinstance(seq2, Sequence):
         seq2 = seq2.seq
 
+    # The return mode.
+    SEQUENCES = "sequences"
+    ALIGNMENT = "alignment"
+
+    if output == SEQUENCES:
+        mode = SEQUENCES
+    elif output == ALIGNMENT:
+        mode = ALIGNMENT
+    else:
+        msg = "Invalid output mode '{}'. Accepted values are: {}."
+        raise TypeError(
+            msg.format(output, ", ".join(SEQUENCES, ALIGNMENT))
+        )
+
     # Default penalties.
     if penalties is None:
-        penalties = {
+        default_penalties = {
             "match": 2,
             "mismatch": -1,
             "gap": -1
         }
-    p = penalties
+        penalties = {}
+    elif type(penalties) is not dict:
+        raise ValueError("The penalties dict should have keys for a subset of "
+                         "match, mismatch and gap scores.")
+
+    default_penalties.update(penalties)
+    p = default_penalties
+
+    msg = ("Computing local alignment using the Smith Waterman algorithm "
+           "with match={}, mismatch={}, gap={}. Return mode: {}.")
+    logger.info(msg.format(p["match"], p["mismatch"], p["gap"], mode))
 
     m = len(seq1) + 1
     n = len(seq2) + 1
@@ -488,14 +536,10 @@ def _smith_waterman(seq1, seq2, penalties=None):
     head = collections.defaultdict(str)
     if j > 0:
         head[2] += seq2[:j][::-1]
-        # align1 = align1 + "-" * len(extra)
-        # align2 = align2 + extra[::-1]
 
     # Case 4, seq 2 starts with gaps.
     if i > 0:
         head[1] += seq1[:i][::-1]
-        # align1 = align1 + extra[::-1]
-        # align2 = align2 + "-" * len(extra)
 
     if tail:
         if tail.get(1):
@@ -513,4 +557,41 @@ def _smith_waterman(seq1, seq2, penalties=None):
             align2 += head[2]
             align1 += "-" * len(head[2])
 
-    return score, align1[::-1], align2[::-1]
+    align1 = align1[::-1]
+    align2 = align2[::-1]
+
+    if mode == SEQUENCES:
+        return score, align1, align2
+
+    if mode == ALIGNMENT:
+        return score, _represent_alignment(align1, align2)
+
+
+def _represent_alignment(s1, s2):
+    """Represent two aligned sequences."""
+    n = len(s1)
+    if len(s2) != n:
+        raise ValueError("Can't represent an alignment between strings of "
+                         "different lengths.")
+
+    alignment = ""
+    for i in xrange(n):
+        assert not (s1[i] == "-" == s2[i]), ("Gap in both sequences at "
+                                             "position {}.".format(i))
+        if s1[i] == s2[i]:
+            # Match.
+            alignment += "M"
+
+        elif s1[i] == "-":
+            # Deletion.
+            alignment += "D"
+
+        elif s2[i] == "-":
+            # Insertion.
+            alignment += "I"
+
+        elif s1[i] != "-" and s2[i] != "-" and s1[i] != s2[i]:
+            # Mismatch.
+            alignment += "X"
+
+    return alignment
