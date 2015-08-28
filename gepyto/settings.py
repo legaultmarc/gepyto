@@ -26,18 +26,34 @@ except ImportError:
 
 BUILD = ""
 REFERENCE_PATH = ""
+GEPYTO_ROOT = ""
+DEBUG = False
 
 CHROM_REGEX = re.compile(r"([0-9]{1,2}|MT|X|Y)")
 
 
+def get_config():
+    """Return a path to the gepyto configuration file."""
+    # Check if the configuration file exists.
+    config_file = os.path.join(GEPYTO_ROOT, "gepytorc.ini")
+    if not os.path.isfile(config_file):
+        _create_default_config(config_file)
+
+    return config_file
+
+
 def _create_default_config(fn):
-    # Create the default configuration file.
+    """Create the default configuration file."""
 
     config = configparser.RawConfigParser()
 
     config.add_section("gepytoConfiguration")
+    config.set("gepytoConfiguration", "DEBUG", False)
     config.set("gepytoConfiguration", "BUILD", "GRCh37")
     config.set("gepytoConfiguration", "REFERENCE_PATH", "")
+
+    config.add_section("databases")
+    config.set("databases", "CCDS_PATH", "")
 
     with open(fn, "w") as f:
         config.write(f)
@@ -57,25 +73,32 @@ def _init_reference(config):
 
 def _init_settings():
     # Create the directory where the configuration file will be.
-    config_dir = os.path.abspath(os.path.join(
-        os.path.expanduser("~"),
-        ".gepyto"
-    ))
+    global DEBUG
+    global GEPYTO_ROOT
+    try:
+        GEPYTO_ROOT = os.path.expanduser(os.environ["GEPYTO_ROOT"])
+    except KeyError:
+        GEPYTO_ROOT = None
 
-    if not os.path.isdir(config_dir):
-        os.mkdir(config_dir)
+    if GEPYTO_ROOT is None:
+        GEPYTO_ROOT = os.path.abspath(os.path.join(
+            os.path.expanduser("~"),
+            ".gepyto"
+        ))
 
-    # Check if the configuration file exists.
-    config_file = os.path.join(config_dir, "gepytorc.ini")
-    if not os.path.isfile(config_file):
-        _create_default_config(config_file)
+
+    if not os.path.isdir(GEPYTO_ROOT):
+        os.mkdir(GEPYTO_ROOT)
 
     # Read the configuration file.
     config = configparser.RawConfigParser()
-    config.read(config_file)
+    config.read(get_config())
 
     # Load settings related to the reference genome.
     _init_reference(config)
+
+    # Check if debug mode.
+    DEBUG = config.get("gepytoConfiguration", "DEBUG").lower() == "true"
 
 
 _init_settings()

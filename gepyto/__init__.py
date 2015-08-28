@@ -17,6 +17,12 @@ __email__ = "legaultmarc@gmail.com"
 __status__ = "Development"
 
 
+from .settings import DEBUG
+
+import logging
+logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO)
+
+
 # Loading the version
 try:
     from .version import gepyto_version as __version__
@@ -26,7 +32,6 @@ except ImportError:
 
 
 def test(verbosity=1):
-    import logging
     import unittest
     from .tests import test_suite
 
