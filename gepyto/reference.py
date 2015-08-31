@@ -20,11 +20,13 @@ import os
 import functools
 import re
 from collections import namedtuple
-
-from pyfaidx import Fasta
+import logging
+logger = logging.getLogger(__name__)
 
 from . import settings
 from .db.ensembl import query_ensembl, get_url_prefix
+from .structures.sequences import infer_sequence_type, Sequence
+from .formats.fasta import FastaFile
 
 
 class _RemoteChromosome(object):
@@ -96,7 +98,72 @@ class _RemoteReference(object):
         pass
 
 
-class Reference(object):
+class GenericReference(object):
+    def __init__(self, fasta_reference):
+        self.ref = FastaFile(fasta_reference)
+
+    def get_nucleotide(self, seq_id, pos):
+        """Get the nucleotide at the given position. """
+        return self.get_sequence(str(seq_id), int(pos), length=1)
+
+    def get_sequence(self, seq_id, start, end=None, length=None,
+                     sequence_object=False):
+        """Get the nucleotide sequence at the given position.
+
+        :param seq_id: The FASTA (or similar) sequence ID.
+        :type seq_id: str
+
+        :param start: The start position of the locus.
+        :type start: int
+
+        :param end: The end position.
+        :type end: int
+
+        :param length: The length of the sequence to fetch.
+        :type length: int
+
+        :param sequence_object: A flag that tells this method to return a
+                                sequence object instead of a string.
+        :type sequence_object: bool
+
+        Either an ``end`` or a ``length`` parameter has to be provided.
+
+        The ranges are incluse, this means that (start, end) positions will
+        both be included in the sequence.
+
+        """
+        if (end is None and length is None) or (end and length):
+            raise TypeError("get_sequence needs either an 'end' OR 'length' "
+                            "argument.")
+
+        if length:
+            end = start + length - 1
+
+        try:
+            seq = self.ref[str(seq_id)][start - 1: end]
+        except KeyError:
+            seq = None
+
+        seq = str(seq.seq).upper()
+
+        if sequence_object:
+            name = "{}:{}-{}".format(seq_id, start, end)
+            seq_type = infer_sequence_type(seq)
+            return Sequence(name, seq, seq_type)
+
+        return seq
+
+    def close(self):
+        self.ref.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+
+class GenomeReference(GenericReference):
     """Interface to the human genome reference file.
 
     This class uses ``pyfaidx`` to parse the genome reference file referenced
@@ -116,8 +183,14 @@ class Reference(object):
     def __init__(self, remote=False):
         if not remote:
             try:
-                self.ref = Fasta(settings.REFERENCE_PATH)
+                self.ref = FastaFile(settings.REFERENCE_PATH)
             except IOError:
+                if settings.REFERENCE_PATH:
+                    msg = ("Could not parse genome reference from '{}' "
+                           "(IOError). Falling back on the Ensembl API ")
+                    msg = msg.format(settings.REFERENCE_PATH)
+                    logger.warning(msg)
+
                 self.ref = _RemoteReference(settings.BUILD)
         else:
             self.ref = _RemoteReference(settings.BUILD)
@@ -174,58 +247,31 @@ class Reference(object):
         else:
             return check_indel_reference(variant, self, flip)
 
-    def get_nucleotide(self, chrom, pos):
-        """Get the nucleotide at the given genomic position. """
-        return self.get_sequence(str(chrom), pos, length=1)
+    def get_sequence(self, chrom, start, end=None, length=None,
+                     sequence_object=False):
+        seq = super(GenomeReference, self).get_sequence(
+            chrom, start, end, length, sequence_object=sequence_object
+        )
+        if seq is None:
+            # Try adding or removing the "chr" prefix.
+            if chrom.startswith("chr"):
+                chrom = chrom[3:]
+            else:
+                chrom = "chr" + str(chrom)
 
-    def get_sequence(self, chrom, start, end=None, length=None):
-        """Get the nucleotide sequence at the given genomic locus.
-
-        :param chrom: The chromosome.
-        :type chrom: str
-
-        :param start: The start position of the locus.
-        :type start: int
-
-        :param end: The end position.
-        :type end: int
-
-        :param length: The length of the sequence to fetch.
-        :type length: int
-
-        Either an ``end`` or a ``length`` parameter has to be provided.
-
-        The ranges are incluse, this means that (start, end) positions will
-        both be included in the sequence.
-
-        """
-        if (end is None and length is None) or (end and length):
-            raise TypeError("get_sequence needs either an 'end' OR 'length' "
-                            "argument.")
-
-        if length:
-            end = start + length - 1
-
-        try:
-            seq = self.ref[str(chrom)][start - 1: end]
-        except KeyError:
-            seq = None
+            seq = super(GenomeReference, self).get_sequence(
+                chrom, start, end, length, sequence_object=sequence_object
+            )
 
         if seq is None:
             error_message = "chr{}:{}-{} is an invalid genomic mapping"
             error_message = error_message.format(chrom, start, end)
             raise InvalidMapping(error_message)
 
-        return str(seq.seq).upper()
+        return seq
 
-    def close(self):
-        self.ref.close()
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.close()
+Reference = GenomeReference
 
 
 class InvalidMapping(Exception):

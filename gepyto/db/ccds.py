@@ -172,11 +172,7 @@ def _download_recompress(url, destination):
         data = f.read()
         uncompressed = zlib.decompress(data, zlib.MAX_WBITS|32)
         with bgzf.BgzfWriter(destination) as out:
-            for line in uncompressed.splitlines():
-                if line.startswith(">"):
-                    line = line.split("|")[0]
-
-                out.write(line + "\n")
+                out.write(uncompressed)
 
 
 def _restore_state():

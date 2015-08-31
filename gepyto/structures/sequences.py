@@ -1,4 +1,3 @@
-
 # Structures to handle biological sequences.
 #
 # This file is part of gepyto.
@@ -7,6 +6,7 @@
 # 4.0 International License. To view a copy of this license, visit
 # http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
 from __future__ import division
 
 __author__ = "Marc-Andre Legault"
@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 import numpy as np
 from six.moves import range as xrange
 
-from .. import reference
 from .. import settings
 
 
@@ -153,24 +152,6 @@ class Sequence(object):
 
     def __len__(self):
         return len(self.seq)
-
-    @classmethod
-    def from_reference(cls, chrom, start, end=None, length=None):
-        """Create a Sequence object from a given locus."""
-        with reference.Reference() as ref:
-            seq = ref.get_sequence(chrom, start, end, length)
-
-        if length:
-            end = start + length - 1
-        uid = "chr{}:{}-{}".format(chrom, start, end)
-        seq_type = "DNA"
-        info = {
-            "species": "Homo sapiens",
-            "species_ncbi_tax_id": 9606,
-            "build": settings.BUILD
-        }
-
-        return cls(uid, seq, seq_type, info)
 
     def to_fasta(self, line_len=80, full_header=False):
         """Converts the sequence to a valid fasta string.
@@ -595,3 +576,37 @@ def _represent_alignment(s1, s2):
             alignment += "X"
 
     return alignment
+
+def infer_sequence_type(s):
+    """Identify the type of a sequence.
+    
+    Choices are:
+
+        - DNA (ATGCN)
+        - RNA (AUGCN)
+        - AA (1 letter amino acid codes)
+        - IUPAC_DNA (IUPAC nucleotide codes including T)
+        - IUPAC_RNA (IUPAC nucleotide codes including U)
+
+    """
+    if not set(s) - set("ATGCN"):
+        return "DNA"
+
+    if not set(s) - set("AUGCN"):
+        return "RNA"
+
+    aa = ("A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q",
+          "R", "S", "T", "V", "W", "Y")
+    if not set(s) - set(aa):
+        return "AA"
+
+    iupac = set(["A", "C", "G", "T", "R", "Y", "S", "W", "K", "M", "B",
+                 "D", "H", "V", "N"])
+    if not set(s) - set(iupac):
+        return "IUPAC_DNA"
+
+    iupac.remove("T")
+    iupac.add("U")
+
+    if not set(s) - set(iupac):
+        return "IUPAC_RNA"
