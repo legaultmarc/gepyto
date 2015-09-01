@@ -153,6 +153,27 @@ class Region(object):
         segments = _Segment.merge_segments(segments)
         return Region._from_segments(segments)
 
+    def intersect(self, region):
+        """Return the overlapping segment between to contiguous regions.
+
+        This will create a region represented by the union of the current
+        Region and the provided Region. This means that only the overlapping
+        segment will be returned.
+
+        """
+        if (not self.is_contiguous) or (not region.is_contiguous):
+            raise NotImplementedError("intersect is not implemented for non "
+                                      "contiguous regions.")
+
+        if not self.overlaps_with(region):
+            raise ValueError("regions do not overlaps")
+
+        return Region(
+            chrom=self.chrom,
+            start=max(self.start, region.start),
+            end=min(self.end, region.end),
+        )
+
     def overlaps_with(self, region):
         """Tests overlap with another region."""
         for seg1 in self.segments:
