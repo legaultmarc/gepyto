@@ -261,6 +261,17 @@ class Region(object):
         region = Region._from_segments([seg, ])
         return region
 
+    @staticmethod
+    def from_regions(region_list):
+        """Creates one region from a list of regions (using union)."""
+        assert region_list, "empty region list"
+        final_region = region_list[0]
+
+        for region in region_list[1:]:
+            final_region = final_region.union(region)
+
+        return final_region
+
     def __contains__(self, o):
         """Tests if an object is in the region.
 
