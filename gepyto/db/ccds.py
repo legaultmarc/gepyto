@@ -22,9 +22,11 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import os
 import zlib
+import sqlite3
 import functools
 import contextlib
 import multiprocessing
+import collections
 import logging
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,83 @@ from six.moves import input, configparser
 from Bio import bgzf  # Dependency for BioPython.
 
 from .. import settings
+from ..reference import GenericReference
 from ..utils.progress import Progress
+
+
+ccds_fields = ("chromosome", "nc_accession", "gene", "gene_id", "ccds_id",
+               "ccds_status", "cds_strand", "cds_from", "cds_to",
+               "cds_locations", "match_type")
+
+indexed_fields = set(("nc_accesssion", "gene", "gene_id", "ccds_id"))
+
+CCDSRecord = collections.namedtuple("CCDSRecord", ccds_fields)
+
+
+class CCDS(object):
+    def __init__(self, install=False):
+        # Try to detect the installation parameters.
+        state = _load_installation()
+        if not state:
+            logger.info("Could not find a CCDS installation. Use install=True "
+                        "if you want to install a local copy.")
+            if install:
+                local_install(confirm=False)
+            else:
+                raise Exception("CCDS not installed.")
+
+        self.build_info = state["build_info"]
+        self.con = state["index"][0]
+        self.cur = state["index"][1]
+        self.fasta = state["fastas"]
+        self.ccds = open(state["ccds_filename"], "r")
+
+    def protein_to_genomic(self, record, start, end):
+        """Convert the amino acids coordinates to genomic.
+
+        """
+        # TODO IMPLEMENT ME
+        raise NotImplementedError()
+
+    def get_record(self, **kwargs):
+        """Get a record using the col=value syntax."""
+        if len(kwargs) != 1:
+            raise TypeError("You need to provide a single col=value to query "
+                            "the database.")
+
+        field, value = list(kwargs.items())[0]
+        if field not in indexed_fields:
+            msg = "Can't query on '{}'. Valid columns are: '{}'".format(
+                field, indexed_fields
+            )
+            raise TypeError(msg)
+        sql = "SELECT * FROM ccds_index WHERE {}=?;".format(field)
+        self.cur.execute(sql, (value, ))
+        results = []
+        for tu in self.cur:
+            tell = tu[-1]
+            self.ccds.seek(tell)
+            line = self.ccds.readline().rstrip().split("\t")
+
+            # Parse the positions into integers.
+            positions = []
+            for pos in line[-2].lstrip("[").rstrip("]").split(","):
+                start, end = [int(i) for i in pos.split("-")]
+                positions.append((start, end))
+
+            line[-2] = positions
+
+            results.append(
+                CCDSRecord(*line)
+            )
+
+        return results
+
+
+    def close(self):
+        self.con.close()
+        self.ccds.close()
+
 
 
 def local_install(directory=None, build=settings.BUILD, confirm=True):
@@ -175,8 +253,102 @@ def _download_recompress(url, destination):
                 out.write(uncompressed)
 
 
-def _restore_state():
-    pass
+def _load_installation():
+    config_filename = settings.get_config()
+    config = configparser.RawConfigParser()
+    config.read(config_filename)
+
+    try:
+        path = config.get("databases", "CCDS_PATH")
+    except Exception:
+        return
+
+    version = os.listdir(path)
+    if len(version) == 0:
+        # No local CCDS installation.
+        return
+    elif len(version) > 1:
+        logger.warning("Multiple CCDS versions are installed. Restore the one "
+                       "you wish to use manually.")
+        return
+
+    # There is only one installed version so we can restore it safely.
+    version = version[0]
+    path = os.path.join(path, version)
+
+    # Parse the build info.
+    try:
+        with open(os.path.join(path, "build_info.txt"), "r") as f:
+            build_info = [i.split() for i in f.readlines()]
+            build_info[0][0] = build_info[0][0].lstrip("#")
+            build_info = dict(zip(*build_info))
+    except IOError:
+        logger.debug("Could not parse the build_info.txt file.")
+        return
+
+    # Build an index in memory.
+    ccds_filename = os.path.join(path, "ccds.txt")
+    try:
+        with open(ccds_filename, "r") as f:
+            con, cur = _get_ccds_index(f)
+    except IOError:
+        logger.debug("Could not parse the ccds.txt file.")
+        return
+
+    fastas = {
+        "proteins": os.path.join(path, "proteins.fa.gz"),
+        "nucleotides": os.path.join(path, "nucleotides.fa.gz"),
+    }
+    for k, filename in fastas.items():
+        if not os.path.isfile(filename):
+            logger.debug("Could not find the '{}' file.".format(filename))
+            return
+
+    return {
+        "build_info": build_info,
+        "index": (con, cur),
+        "fastas": fastas,
+        "ccds_filename": ccds_filename
+    }
 
 
-_restore_state()
+def _get_ccds_index(file_object):
+    con = sqlite3.connect(":memory:")
+    cur = con.cursor()
+
+    # Create the table.
+    cur.execute("""
+        CREATE TABLE ccds_index (
+            nc_accession TEXT,
+            gene TEXT,
+            gene_id INTEGER,
+            ccds_id TEXT,
+            tell INTEGER
+        );
+    """)
+
+    header = file_object.readline().lstrip("#").split()
+
+    for i, field in enumerate(header):
+        assert field == ccds_fields[i]
+
+    header = dict(zip(header, range(len(header))))
+
+    _data = []
+    tell = file_object.tell()
+    line = file_object.readline()
+    while line:
+        line = line.rstrip().split()
+        _data.append((
+            line[header["nc_accession"]],
+            line[header["gene"]],
+            int(line[header["gene_id"]]),
+            line[header["ccds_id"]],
+            tell
+        ))
+
+        tell = file_object.tell()
+        line = file_object.readline()
+
+    cur.executemany("INSERT INTO ccds_index VALUES (?, ?, ?, ?, ?)", _data)
+    return con, cur
