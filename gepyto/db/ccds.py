@@ -22,6 +22,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 import os
 import zlib
+import operator
 import sqlite3
 import functools
 import contextlib
@@ -39,6 +40,7 @@ from Bio import bgzf  # Dependency for BioPython.
 from .. import settings
 from ..reference import GenericReference
 from ..utils.progress import Progress
+from ..structures.region import Region
 
 
 ccds_fields = ("chromosome", "nc_accession", "gene", "gene_id", "ccds_id",
@@ -67,6 +69,22 @@ class CCDS(object):
         self.cur = state["index"][1]
         self.fasta = state["fastas"]
         self.ccds = open(state["ccds_filename"], "r")
+
+    @staticmethod
+    def _protein_to_ccds(start, end):
+        """Convert the amino acids coordinates to CCDS.
+
+        :param start: the protein starting position (protein coordinates)
+        :param end: the protein ending position (protein coordinates)
+
+        :type start: int
+        :type end: int
+
+        :returns: the same region, but in CCDS coordinates.
+        :rtype: tuple
+
+        """
+        return start * 3, end * 3 + 2
 
     def protein_to_genomic(self, record, start, end):
         """Convert the amino acids coordinates to genomic.
@@ -109,11 +127,9 @@ class CCDS(object):
 
         return results
 
-
     def close(self):
         self.con.close()
         self.ccds.close()
-
 
 
 def local_install(directory=None, build=settings.BUILD, confirm=True):
@@ -248,7 +264,7 @@ def _download_recompress(url, destination):
     # The contextlib is needed for PY2.
     with contextlib.closing(urlopen(url)) as f:
         data = f.read()
-        uncompressed = zlib.decompress(data, zlib.MAX_WBITS|32)
+        uncompressed = zlib.decompress(data, zlib.MAX_WBITS | 32)
         with bgzf.BgzfWriter(destination) as out:
                 out.write(uncompressed)
 
