@@ -86,6 +86,84 @@ class CCDS(object):
         """
         return start * 3, end * 3 + 2
 
+    def _ccds_to_genomic(self, record, start, end):
+        """converts the CCDS coordinates to genomic.
+
+        :param record: the record for this CCDS.
+        :param start: the CCDS starting position (CCDS coordinates)
+        :param end: the CCDS ending position (CCDS coordinates)
+
+        :type record: CCDSRecord
+        :type start: int
+        :type end: int
+
+        :returns: The same region, but in genomic coordinates. This region
+                  might be a non contiguous region.
+        :rtype: gepyto.structures.region.Region
+
+        """
+        # The chromosome
+        chrom = record.chromosome
+
+        # Creating a region for the asked CDS segment (CDS coordinate)
+        cds_region = Region(chrom=chrom, start=start, end=end)
+
+        # The final region
+        final_regions = []
+
+        # Checking for the strand (if '-', we need to cycle from the end)
+        cds_locations = sorted(record.cds_locations, key=lambda x: x[0])
+        if record.cds_strand == "-":
+            cds_locations = cds_locations[::-1]
+
+        # The first segment starting position in CCDS coordinates
+        cds_start = 1
+
+        # Cycling through the CDS segment (genomic coordinates)
+        for genomic_start, genomic_end in cds_locations:
+            # Getting the current segment ending position (CDS coordinates)
+            cds_end = cds_start + genomic_end - genomic_start
+
+            # Creating a region for this specif region (CDS coordinates)
+            curr_cds_region = Region(chrom=chrom, start=cds_start, end=cds_end)
+
+            if curr_cds_region.start > cds_region.end:
+                # We're pass the segment
+                break
+
+            if not cds_region.overlaps_with(curr_cds_region):
+                # The regions are not overlapping
+                continue
+
+            # Getting the overlapping region of the two CDS region
+            overlap = cds_region.intersect(curr_cds_region)
+
+            # Computing the CDS region (genomic coordinates)
+            cds_genomic_start = genomic_start + overlap.start - cds_start
+            cds_genomic_end = genomic_start + overlap.end - cds_start
+
+            if record.cds_strand == "-":
+                # The correction is different if this is the first segment
+                if len(final_regions) == 0:
+                    correction = -(cds_genomic_start - genomic_start)
+                else:
+                    correction = genomic_end - cds_genomic_end
+
+                cds_genomic_start += correction
+                cds_genomic_end += correction
+
+            # Adding this genomic region
+            final_regions.append(Region(
+                chrom=chrom,
+                start=cds_genomic_start,
+                end=cds_genomic_end,
+            ))
+
+            # Getting the next segment staring position (CDS coordinates)
+            cds_start = cds_end + 1
+
+        return Region.from_regions(final_regions)
+
     def protein_to_genomic(self, record, start, end):
         """Convert the amino acids coordinates to genomic.
 
