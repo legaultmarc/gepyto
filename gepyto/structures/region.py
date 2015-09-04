@@ -13,13 +13,14 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
-__all__ = ["Region", "get_centromere", "get_telomere"]
-
 
 import re
 
 from .. import settings
 from . import sequences
+
+import numpy as np
+from six.moves import range
 
 
 class _Segment(object):
@@ -45,6 +46,11 @@ class _Segment(object):
             return segment.start - self.end
         else:
             return self.start - segment.end
+
+    def as_range(self, iterator=False):
+        if iterator:
+            return range(self.start, self.end + 1)
+        return np.arange(self.start, self.end + 1)
 
     def __eq__(self, seg):
         return (self.chrom == seg.chrom and self.start == seg.start and
@@ -170,6 +176,13 @@ class Region(object):
                 if d < min_dist:
                     min_dist = d
         return min_dist
+
+    def as_range(self, iterator=False):
+        """Get a range corresponding to all the nucleotide positions."""
+        if self.is_contiguous:
+            return self.segments[0].as_range(iterator)
+        else:
+            return set([seg.as_range(iterator) for seg in self.segments])
 
     @property
     def chrom(self):
