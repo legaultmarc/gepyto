@@ -14,7 +14,6 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
                  "Lemieux Perreault. All rights reserved.")
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
-__all__ = ["Sequence", ]
 
 try:
     from string import maketrans, translate
@@ -271,6 +270,10 @@ class Sequence(object):
                   (ORF, start, end, sequence)
         :rtype: tuple
 
+        .. warning::
+
+            This is currently **untested**.
+
         """
         orfs = collections.OrderedDict([
             (1, self.seq),
@@ -428,9 +431,28 @@ def smith_waterman(seq1, seq2, penalties=None, output="sequences"):
     penalized. Also, only one of the potentially many best alignments will be
     output.
 
-    This implementation is not very optimized. It is not written in a low level
-    language. It can be used for small sequences or for low number of
-    comparisons, but should not be used in large scale products.
+    .. warning::
+
+        This implementation is not very optimized. It is not written in a low
+        level language. It can be used for small sequences or for low number of
+        comparisons, but should not be used in large scale products.
+
+    .. note::
+
+        Some functionality like affine gap penalties, or substitution matrices
+        are not implemented.
+
+    The default penalty scheme is the following:
+
+    .. code-block:: python
+
+        {
+            "match": 2,
+            "mismatch": -1,
+            "gap": -1
+        }
+
+    You can follow this pattern to set your own penalty scores.
 
     """
     if isinstance(seq1, Sequence):
@@ -449,7 +471,7 @@ def smith_waterman(seq1, seq2, penalties=None, output="sequences"):
     else:
         msg = "Invalid output mode '{}'. Accepted values are: {}."
         raise TypeError(
-            msg.format(output, ", ".join(SEQUENCES, ALIGNMENT))
+            msg.format(output, ", ".join([SEQUENCES, ALIGNMENT]))
         )
 
     # Default penalties.

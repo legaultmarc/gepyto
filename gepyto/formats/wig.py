@@ -20,17 +20,37 @@ import os
 import pandas as pd
 import six
 
-from ..structures.region import _Segment, Region
-
-
 
 class WiggleFile(object):
     """Parser for WIG files.
-    
+
     This returns a pandas dataframe with all the necessary information. In the
     process, all the inherent compactness of the Wiggle format is lost in
     exchange for an easier to manage representation. This means that more
     efficient parsers should be used for large chunks of data.
+
+    This implementation is based on the specification from:
+    http://genome.ucsc.edu/goldenpath/help/wiggle.html
+
+    .. warning::
+        ``fixedStep`` is the only implemented mode for now. Future releases
+        might improve this parser to be more flexible.
+
+    To access the parsed information, use the
+    :py:func:`WiggleFile.as_dataframe` function.
+
+    Usage (given a file on disk):
+
+    >>> import gepyto.formats.wig
+    >>> with gepyto.formats.wig.WiggleFile("my_file.wig") as f:
+    ...     df = f.as_dataframe()
+    ...
+    >>> df
+      chrom     pos  value
+    0  chr3  400601     11
+    1  chr3  400701     22
+    2  chr3  400801     33
+
 
     """
     def __init__(self, stream):
@@ -73,7 +93,6 @@ class WiggleFile(object):
     def as_dataframe(self):
         return self.data
 
-
     def _parse_fixed_step(self, header=None):
         data = []
         for line in self.stream:
@@ -96,7 +115,6 @@ class WiggleFile(object):
             data,
             columns=("chrom", "start", "end", "value")
         )
-
 
     @staticmethod
     def _parse_header(line):

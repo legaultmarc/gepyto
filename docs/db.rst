@@ -40,3 +40,8 @@ as keys and lists of ``(position, file seek)`` as values.
 .. automodule:: gepyto.db.index
     :members:
 
+UCSC
+-----
+
+.. automodule:: gepyto.db.ucsc
+    :members:

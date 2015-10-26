@@ -36,7 +36,40 @@ class InvalidGTF(Exception):
 
 
 class GTFFile(object):
-    """Class representing a GTF file."""
+    """Parser for GTF files.
+
+    This implementation was based on the format specification as described
+    here: http://www.sanger.ac.uk/resources/software/gff/spec.html.
+
+    You can use this parser on both local files (compressed using gzip, or not)
+    and on remote files (on a HTTP server).
+
+    For every line, this class will return a named tuple with the following
+    fields:
+
+    - seqname
+    - source
+    - features
+    - start
+    - end
+    - score
+    - strand
+    - frame
+    - attributes
+
+    Example usage:
+
+    >>> import gepyto.formats.gtf
+    >>> url = "http://www.uniprot.org/uniprot/O60503.gff"
+    >>> gtf = gepyto.formats.gtf.GTFFile(url)
+    >>> gtf
+    <gepyto.formats.gtf.GTFFile object at 0x1006dd590>
+    >>> gtf.readline()
+    _Line(seqname=u'O60503', source=u'UniProtKB', features=u'Chain', start=1,\
+end=1353, score=None, strand=None, frame=None, attributes={u'Note':\
+u'Adenylate cyclase type 9', u'ID': u'PRO_0000195708'})
+
+    """
 
     Line = namedtuple("_Line", ["seqname", "source", "features", "start",
                                 "end", "score", "strand", "frame",

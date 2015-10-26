@@ -9,8 +9,19 @@ Impute2
     :members:
 
 SeqXML
----------
+-------
 
 .. automodule:: gepyto.formats.seqxml
     :members:
 
+GTF/GFF
+--------
+
+.. automodule:: gepyto.formats.gtf
+    :members:
+
+Wiggle (fixedStep)
+------------------
+
+.. automodule:: gepyto.formats.wig
+    :members:

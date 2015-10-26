@@ -20,7 +20,7 @@ import tempfile
 
 import numpy as np
 
-from ..formats import impute2
+from ..formats import impute2, wig
 from .. import formats as fmts
 from ..structures.sequences import Sequence
 
@@ -336,6 +336,52 @@ class TestImpute2Class(unittest.TestCase):
                     raise Exception()
 
 
+class TestWig(unittest.TestCase):
+    """Test for the WIG file parser."""
+    def test_ucsc_example_1(self):
+        expected = [
+            ("chr3", 400601, 11),
+            ("chr3", 400701, 22),
+            ("chr3", 400801, 33),
+        ]
+
+        f = _create_file("fixedStep chrom=chr3 start=400601 step=100\n11\n22\n"
+                         "33\n")
+        with wig.WiggleFile(f.name) as wig_file:
+            df = wig_file.as_dataframe()
+            for i, line in df.iterrows():
+                self.assertTrue(
+                    all([i == j for i, j in zip(line, expected[i])])
+                )
+
+    def test_ucsc_example_1_names(self):
+        f = _create_file("fixedStep chrom=chr3 start=400601 step=100\n11\n22\n"
+                         "33\n")
+        with wig.WiggleFile(f.name) as wig_file:
+            df = wig_file.as_dataframe()
+            for i, line in df.iterrows():
+                self.assertEqual(
+                    list(line.index),
+                    ["chrom", "pos", "value"]
+                )
+
+    def test_ucsc_example_2(self):
+        expected = [
+            ("chr3", 400601, 400605, 11),
+            ("chr3", 400701, 400705, 22),
+            ("chr3", 400801, 400805, 33),
+        ]
+
+        f = _create_file("fixedStep chrom=chr3 start=400601 step=100 span=5"
+                         "\n11\n22\n33\n")
+        with wig.WiggleFile(f.name) as wig_file:
+            df = wig_file.as_dataframe()
+            for i, line in df.iterrows():
+                self.assertTrue(
+                    all([i == j for i, j in zip(line, expected[i])])
+                )
+
+
 class TestGTF(unittest.TestCase):
     """Test the GTF file parser."""
     def setUp(self):
@@ -462,3 +508,11 @@ class TestGFF(TestGTF):
     """Test the GFF binding."""
     def setUp(self):
         self.cls = fmts.gff.GFFFile
+
+
+def _create_file(s):
+    """Create a temporary file and return its handle."""
+    f = tempfile.NamedTemporaryFile("w")
+    f.write(s)
+    f.seek(0)
+    return f

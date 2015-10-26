@@ -1,4 +1,3 @@
-
 # Utilities to handle chromosome ideogram plotting.
 
 # This file is part of gepyto.
@@ -12,7 +11,6 @@
 import operator
 from collections import namedtuple
 
-import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 from ..db import ucsc
@@ -41,6 +39,11 @@ def plot_chr_ideogram(ax, chrom, loc="bottom", cyto_color=_ucsc_cytoband_color,
                       proportion=0.05):
     """Plot the chromosome ideogram at the bottom of the axe.
 
+    This function can be used if you want to plot cytobands corresponding to a
+    locus. As an example, if you want to display association p-values and the
+    corresponding cytoband on the same plot, you could use this function. Note
+    that the axis should correspond to the chromosomal position.
+
     :param ax: the axe that will contain the genes in the region.
     :type ax: :py:class:`matplotlib.axes.Axes`
 
@@ -68,6 +71,10 @@ def plot_chr_ideogram(ax, chrom, loc="bottom", cyto_color=_ucsc_cytoband_color,
         :math:`(y_{max} - y_min) * proportion`. If the location is left or
         right, the width is determined as
         :math:`(x_{max} - x_{min}) * proportion`.
+
+    .. warning::
+
+        This function is not covered by unittests.
 
     """
     # Checking the location value

@@ -37,10 +37,10 @@ class TestVariant(unittest.TestCase):
 
         # Simple variations
         self.snp = variants.SNP(chrom="19", pos=55663495,
-                                       rs=self.snp_rs, ref="C", alt="T")
+                                rs=self.snp_rs, ref="C", alt="T")
+
         self.indel = variants.Indel(chrom="19", pos=55663539,
-                                           rs=self.indel_rs,
-                                           ref="TTC", alt="T")
+                                    rs=self.indel_rs, ref="TTC", alt="T")
 
         # Insertions
         self.insertion_rs = "rs11273285"
@@ -87,7 +87,10 @@ class TestVariant(unittest.TestCase):
 
     def test_insertion(self):
         indel = variants.Indel.from_ensembl_api(self.insertion_rs)
-        self.assertEqual(indel, [self.insertion])
+        # A new dbSNP build added new alternative alleles, so now we just
+        # test that the expected variant is in the returned list.
+        # This way we don't have to update the tests every time.
+        self.assertTrue(self.insertion in indel)
 
     def test_deletion(self):
         indel = variants.ShortVariant.from_ensembl_api(self.deletion_rs)
@@ -168,6 +171,7 @@ class TestVariant(unittest.TestCase):
             variants.variant_list_to_dataframe,
             [snp1, snp2, indel]
         )
+
 
 class TestGene(unittest.TestCase):
     """Tests for the struct.genes module.
@@ -251,3 +255,49 @@ class TestSequence(unittest.TestCase):
         seq = sequences.Sequence("test", "TAGTVTAMCTATK", "DNA")
         expected = "MATAGKTABACTA"
         self.assertEqual(seq.reverse_complement().seq, expected)
+
+    def test_local_alignment_score(self):
+        score, s1, s2 = sequences.smith_waterman(
+            "AAAAAAAAAGTGTAAAAAAA",
+            "AGTGT"
+        )
+        # AAAAAAAAAGTGTAAAAAAA
+        #         AGTGT
+        # 5 matches, free rides on both sides.
+        self.assertEqual(score, 2 * 5)
+
+    def test_local_alignment_sequences(self):
+        score, s1, s2 = sequences.smith_waterman(
+            "AAAAAAAAAGTGTAAAAAAA",
+            "AGTGT"
+        )
+        # AAAAAAAAAGTGTAAAAAAA
+        #         AGTGT
+        # s1 = s1
+        # s2 = --------AGTGT-------
+        self.assertEqual(s1, "AAAAAAAAAGTGTAAAAAAA")
+        self.assertEqual(s2, "--------AGTGT-------")
+
+    def test_alignment_gap(self):
+        score, s1, s2 = sequences.smith_waterman(
+            "GTCGTCATGA",
+            "GTCTGAT"
+        )
+        # GTCGTCATGA
+        #    GTC TGAT
+        #    MMMIMMMD = 2 * 6 - 1 = 11 - 1
+        self.assertEqual(score, 11)
+        self.assertEqual(s1, "GTCGTCATGA-")
+        self.assertEqual(s2, "---GTC-TGAT")
+
+    def test_alignment_return_alignment(self):
+        score, alg = sequences.smith_waterman(
+            "GTCGTCATGA",
+            "GTCTGAT",
+            output="alignment"
+        )
+        self.assertEqual(alg, "IIIMMMIMMMD")
+
+    def test_alignment_weird_output(self):
+        with self.assertRaises(TypeError):
+            sequences.smith_waterman("ABC", "ABC", output="potato")

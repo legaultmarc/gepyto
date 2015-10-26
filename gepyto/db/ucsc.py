@@ -18,9 +18,6 @@ __copyright__ = ("Copyright 2014 Marc-Andre Legault and Louis-Philippe "
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-__all__ = ["UCSC", ]
-
-
 import collections
 
 import numpy as np
@@ -160,6 +157,18 @@ def get_phylop_100_way(region):
     Because UCSC uses 0-based indexing, we adjust the gepyto region before
     querying. This means that the user should use 1-based indexing, as
     usual when creating the Region object.
+
+    .. warning::
+
+        This function has a fairly low resolution. You should download the raw
+        data (e.g. from
+        `goldenpath <http://hgdownload.cse.ucsc.edu/goldenpath/hg19/phyloP100way/>`_
+        ) if you need scores for each base.
+        Also note that gepyto can't parse bigWig, but it can parse Wig files.
+
+    .. warning::
+
+        This function is **untested**.
 
     """
     with UCSC() as ucsc:
