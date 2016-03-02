@@ -66,6 +66,8 @@ def ensembl_variants_in_region(region, build=BUILD):
     url = url.format(region=region)
 
     res = query_ensembl(url)
+    if not res:
+        return None
 
     variants = []
     for variant in res:
@@ -78,27 +80,28 @@ def ensembl_variants_in_region(region, build=BUILD):
         start = variant["start"]
         end = variant["end"]
         rs = str(variant["id"])
+
+        if len(variant["alleles"]) < 2:
+            # Weirdly, we have less than two alleles.
+            logging.warning("ID={} has only one allele (ignored).".format(rs))
+            continue
+
         if type(rs) is str and not rs.startswith("rs"):
             # We ignore the id if it's not from dbSNP.
             rs = None
 
-        if len(variant["alt_alleles"]) < 2:
-            # Weirdly, we have less than two alleles.
-            logging.warning("RS={} has only one allele (ignored).".format(rs))
-            continue
-
-        ref = str(variant["alt_alleles"][0])
+        ref = str(variant["alleles"][0])
 
         is_snp = True
-        for allele in variant["alt_alleles"]:
+        for allele in variant["alleles"]:
             if allele == "-" or len(allele) > 1:
                 is_snp = False
 
-        for alt in variant["alt_alleles"][1:]:
+        for alt in variant["alleles"][1:]:
             if is_snp:
                 variant_li = [SNP(chrom, start, rs, ref, str(alt))]
             else:
-                variant["allele_string"] = "/".join(variant["alt_alleles"])
+                variant["allele_string"] = "/".join(variant["alleles"])
                 variant_li = Indel._parse_ensembl_indel(rs, variant)
 
             variants += variant_li
